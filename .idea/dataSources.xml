@@ -1,11 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="DataSourceManagerImpl" format="xml" multifile-model="true">
-    <data-source source="LOCAL" name="postgres@localhost" uuid="19a40004-5325-408b-ad19-0673a0c84bfe">
+
+    <data-source source="LOCAL" name="ai-rag-knowledge@localhost" uuid="1b7738ba-9417-4a92-bfc0-b4580fa22634">
       <driver-ref>postgresql</driver-ref>
       <synchronize>true</synchronize>
+      <imported>true</imported>
       <jdbc-driver>org.postgresql.Driver</jdbc-driver>
-      <jdbc-url>jdbc:postgresql://localhost:5432/postgres</jdbc-url>
+      <jdbc-url>jdbc:postgresql://localhost:5432/ai-rag-knowledge</jdbc-url>
       <jdbc-additional-properties>
         <property name="com.intellij.clouds.kubernetes.db.host.port" />
         <property name="com.intellij.clouds.kubernetes.db.enabled" value="false" />
