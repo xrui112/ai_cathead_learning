@@ -50,6 +50,11 @@
             <groupId>org.springframework.ai</groupId>
             <artifactId>spring-ai-ollama</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>provided</scope>
+        </dependency>
     </dependencies>
 
     <properties>
