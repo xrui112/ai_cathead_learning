@@ -32,6 +32,10 @@ public class OllamaConfig {
         return new OllamaApi.Builder().baseUrl(baseUrl).build();
     }
 
+    //当我想引入其他模型的时候
+    //在此处注入不同模型的Api 然后在对应 vectorStore pgVectorStore 根据不同的模型进行构建
+    //然后注入不同的ChatModel 在编写不同接口进行区分即可!
+
     @Bean
     public OllamaChatModel ollamaChatModel(OllamaApi ollamaApi) {
         return new OllamaChatModel(ollamaApi, OllamaOptions.builder().build(),

@@ -3,6 +3,7 @@ package cn.cathead.ai.trigger.http;
 import cn.cathead.ai.api.IAiService;
 import jakarta.annotation.Resource;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.model.ChatResponse;
@@ -26,6 +27,7 @@ import java.util.stream.Collectors;
 @RestController()
 @CrossOrigin("*")
 @RequestMapping("/api/v1/ollama/")
+@Slf4j
 public class OllamaController implements IAiService {
 
     @Resource
@@ -52,7 +54,7 @@ public class OllamaController implements IAiService {
     @RequestMapping(value = "generate_stream",method = RequestMethod.GET)
     @Override
     public Flux<ChatResponse> generateStream(@RequestParam String model, @RequestParam String message) {
-
+        log.info("调用流式接口");
         return ollamaChatModel.stream(new Prompt(
                 message,
                 ChatOptions.builder()
@@ -67,6 +69,7 @@ public class OllamaController implements IAiService {
     @RequestMapping(value = "generate_stream_rag",method = RequestMethod.GET)
     @Override
     public Flux<ChatResponse> generateStreamRag(@RequestParam String model,@RequestParam String ragTag,@RequestParam String message){
+        log.info("带rag的查询开始");
         String SYSTEM_PROMPT = """
                 Use the information from the DOCUMENTS section to provide accurate answers but act as if you knew this information innately.
                 If unsure, simply state that you don't know.
@@ -77,10 +80,17 @@ public class OllamaController implements IAiService {
         SearchRequest request=SearchRequest.builder()
                 .query(message)
                 .topK(5)
-                .filterExpression("knowledge == "+ragTag)
+                .filterExpression("knowledge == ' "+ragTag+"'")
                 .build();
 
         List<Document> documents=pgVectorStore.similaritySearch(request);
+
+        if (documents==null || documents.isEmpty() ){
+            log.info("没有查到任务相关信息");
+        }else{
+
+            documents.forEach(doc->log.info("doc文档查询到了 :{ }"+doc.getText()));
+        }
 
         String docMerge=documents.stream().map(Document::getText).collect(Collectors.joining());
 
@@ -89,6 +99,7 @@ public class OllamaController implements IAiService {
         List<Message> messages=new ArrayList<>();
         messages.add(new UserMessage(message));
         messages.add(ms);
+        messages.forEach(s->log.info(String.valueOf(s)));
         return ollamaChatModel.stream(new Prompt(
                 messages,
                 OllamaOptions.builder()

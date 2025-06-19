@@ -104,6 +104,10 @@
                 <artifactId>junit</artifactId>
                 <scope>test</scope>
             </dependency>
+            <dependency>
+                <groupId>org.eclipse.jgit</groupId>
+                <artifactId>org.eclipse.jgit</artifactId>
+            </dependency>
         </dependencies>
 
     <build>
