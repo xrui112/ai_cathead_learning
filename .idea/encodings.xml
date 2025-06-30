@@ -5,8 +5,14 @@
     <file url="file://$PROJECT_DIR$/cathead-sy-api/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/cathead-sy-app/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/cathead-sy-app/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/cathead-sy-domain/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/cathead-sy-domain/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/cathead-sy-infrastructure/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/cathead-sy-infrastructure/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/cathead-sy-trigger/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/cathead-sy-trigger/src/main/resources" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/cathead-sy-types/src/main/java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/cathead-sy-types/src/main/resources" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/src/main/java" charset="UTF-8" />
     <file url="file://$PROJECT_DIR$/src/main/resources" charset="UTF-8" />
   </component>

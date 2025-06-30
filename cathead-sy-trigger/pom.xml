@@ -47,6 +47,7 @@
             <artifactId>cathead-sy-api</artifactId>
             <version>1.0</version>
         </dependency>
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
@@ -75,6 +76,16 @@
         </dependency>
 
 
+        <dependency>
+            <groupId>cn.cathead</groupId>
+            <artifactId>cathead-sy-types</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>cn.cathead</groupId>
+            <artifactId>cathead-sy-domain</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
     </dependencies>
 
     <properties>
