@@ -8,7 +8,7 @@ import cn.cathead.ai.domain.model.model.entity.EmbeddingModelEntity;
 import cn.cathead.ai.domain.model.model.entity.BaseModelEntity;
 import cn.cathead.ai.domain.model.repository.IModelRepository;
 import cn.cathead.ai.domain.model.service.ModelBean.IModelBeanManager;
-import cn.cathead.ai.domain.model.service.provider.ModelProvider;
+import cn.cathead.ai.domain.model.service.provider.IModelProvider;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.model.ChatModel;
@@ -28,7 +28,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ModelService implements IModelService{
 
     @Resource
-    private Map<String, ModelProvider> modelProviderMap = new ConcurrentHashMap<>();
+    private Map<String, IModelProvider> modelProviderMap = new ConcurrentHashMap<>();
 
     @Resource
     private IModelRepository iModelRepository;
@@ -151,7 +151,13 @@ public class ModelService implements IModelService{
                 .frequencyPenalty(chatModelDTO.getFrequencyPenalty())
                 .stop(chatModelDTO.getStop())
                 .build();
+
+        // 查询version 保证已经是最新
+        //select version
+
+        // 已经是最新的 那就更改 调用update model  同时记得version+1
         
+
         // 2. 更新数据库
         iModelRepository.updateModelRecord(chatModelEntity);
         

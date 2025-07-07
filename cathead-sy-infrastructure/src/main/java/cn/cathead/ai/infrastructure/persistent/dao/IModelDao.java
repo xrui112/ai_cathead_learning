@@ -1,6 +1,4 @@
 package cn.cathead.ai.infrastructure.persistent.dao;
-
-
 import cn.cathead.ai.infrastructure.persistent.po.ModelConfig;
 import cn.cathead.ai.infrastructure.persistent.po.ChatRequest;
 import org.apache.ibatis.annotations.Mapper;

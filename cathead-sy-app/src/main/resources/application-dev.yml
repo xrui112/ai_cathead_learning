@@ -44,6 +44,13 @@ spring:
   ai:
     model:
       chat: none
+      embedding: none
+      image: none
+      audio:
+        speech: none
+        transcription: none
+      moderation: none
+
     ollama:
       base-url: http://localhost:11434
       embedding:
@@ -53,7 +60,7 @@ spring:
     mcp:
       client:
         stdio:
-          servers-configuration: classpath:/config/mcp-servers-config.json
+          servers-configuration: classpath:/mcpconifg/mcp-servers-config.json
 
 
 # Redis

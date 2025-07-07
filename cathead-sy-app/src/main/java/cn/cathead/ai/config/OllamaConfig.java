@@ -1,7 +1,10 @@
 package cn.cathead.ai.config;
 
 
+import ch.qos.logback.core.net.server.Client;
 import io.micrometer.observation.ObservationRegistry;
+import io.modelcontextprotocol.client.McpClient;
+import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.model.tool.DefaultToolCallingManager;
 import org.springframework.ai.ollama.OllamaChatModel;
 import org.springframework.ai.tool.ToolCallback;
@@ -27,6 +30,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import static ch.qos.logback.classic.spi.ThrowableProxyVO.build;
+
 
 @Slf4j
 @Configuration
@@ -42,17 +47,32 @@ public class OllamaConfig {
     //在此处注入不同模型的Api 然后在对应 vectorStore pgVectorStore 根据不同的模型进行构建
     //然后注入不同的ChatModel 在编写不同接口进行区分即可!
 
+    @Autowired
+    private ToolCallbackProvider tools;
+
     @Bean
     public OllamaChatModel ollamaChatModel(OllamaApi ollamaApi) {
 
         return new OllamaChatModel(
                 ollamaApi,
                 OllamaOptions.builder()
-                        .model("llama3.2")
+                        .model("qwen3")
                         .build(),
-                DefaultToolCallingManager.builder().build(),
+                DefaultToolCallingManager
+                        .builder()
+                        .build(),
                 ObservationRegistry.NOOP,
                 ModelManagementOptions.builder().build());
+    }
+
+    @Bean
+    public ChatClient chatClient(OllamaChatModel ollamaChatModel){
+
+        return ChatClient
+                .builder(ollamaChatModel)
+                .defaultToolCallbacks(tools)
+                .build();
+
     }
 
 

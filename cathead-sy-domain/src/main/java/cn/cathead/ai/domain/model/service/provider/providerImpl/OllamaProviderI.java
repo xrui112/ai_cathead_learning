@@ -1,13 +1,11 @@
 package cn.cathead.ai.domain.model.service.provider.providerImpl;
 
-import cn.cathead.ai.domain.model.model.entity.BaseModelEntity;
 import cn.cathead.ai.domain.model.model.entity.ChatModelEntity;
 import cn.cathead.ai.domain.model.model.entity.EmbeddingModelEntity;
 import cn.cathead.ai.domain.model.model.valobj.ModelPropertyVo;
-import cn.cathead.ai.domain.model.service.provider.ModelProvider;
+import cn.cathead.ai.domain.model.service.provider.IModelProvider;
 import io.micrometer.observation.ObservationRegistry;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.model.tool.ToolCallingManager;
 import org.springframework.ai.ollama.OllamaChatModel;
 import org.springframework.ai.ollama.OllamaEmbeddingModel;
@@ -19,14 +17,11 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
-import java.util.UUID;
-
-import static cn.cathead.ai.domain.model.model.valobj.ModelPropertyVo.TEMPERATURE;
 
 @Slf4j
 @Component("ollamaprovider")
 @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
-public class OllamaProvider implements ModelProvider {
+public class OllamaProviderI implements IModelProvider {
 
     //todo 在provider里面进行chat or 向量模型的区分
     //初次创建

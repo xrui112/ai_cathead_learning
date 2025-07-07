@@ -10,10 +10,14 @@ import cn.cathead.ai.infrastructure.persistent.po.ModelConfig;
 import cn.cathead.ai.infrastructure.persistent.po.ChatRequest;
 import com.fasterxml.jackson.databind.ser.Serializers;
 import jakarta.annotation.Resource;
+import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RedissonClient;
+import org.springframework.stereotype.Repository;
 
 import java.util.Arrays;
 
+@Repository
+@Slf4j
 public class ModelRepository implements IModelRepository {
 
     @Resource

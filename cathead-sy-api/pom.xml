@@ -55,6 +55,12 @@
             <artifactId>lombok</artifactId>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>cn.cathead</groupId>
+            <artifactId>cathead-sy-types</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+
     </dependencies>
 
     <properties>

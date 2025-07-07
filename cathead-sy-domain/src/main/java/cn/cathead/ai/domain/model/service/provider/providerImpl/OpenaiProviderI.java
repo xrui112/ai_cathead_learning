@@ -3,14 +3,13 @@ package cn.cathead.ai.domain.model.service.provider.providerImpl;
 import cn.cathead.ai.domain.model.model.entity.ChatModelEntity;
 import cn.cathead.ai.domain.model.model.entity.EmbeddingModelEntity;
 import cn.cathead.ai.domain.model.model.valobj.ModelPropertyVo;
-import cn.cathead.ai.domain.model.service.provider.ModelProvider;
+import cn.cathead.ai.domain.model.service.provider.IModelProvider;
 import io.micrometer.observation.ObservationRegistry;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.document.MetadataMode;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.model.tool.ToolCallingManager;
-import org.springframework.ai.ollama.management.ModelManagementOptions;
 import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.ai.openai.OpenAiChatOptions;
 import org.springframework.ai.openai.OpenAiEmbeddingModel;
@@ -26,7 +25,7 @@ import java.util.List;
 @Slf4j
 @Component("openaiprovider")
 @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
-public class OpenaiProvider implements ModelProvider {
+public class OpenaiProviderI implements IModelProvider {
     @Override
     public ChatModel createChat(ChatModelEntity chatModelEntity) {
          OpenAiApi openAiApi= OpenAiApi

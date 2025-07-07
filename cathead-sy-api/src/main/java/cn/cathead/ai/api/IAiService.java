@@ -12,11 +12,11 @@ import reactor.core.publisher.Flux;
 
 public interface IAiService {
 
-    @RequestMapping(value = "creat/model/chat",method = RequestMethod.POST)
-    void creatChat(@RequestParam ChatModelDTO chatModelDTO);
 
-    @RequestMapping(value = "creat/model/embedding",method = RequestMethod.POST)
-    void creatEmbedding(@RequestParam EmbeddingModelDTO embeddingModelDTO);
+    void creatChat(ChatModelDTO chatModelDTO);
+
+
+    void creatEmbedding(EmbeddingModelDTO embeddingModelDTO);
 
     public Flux<ChatResponse> chatWith(ChatRequestDto chatRequestDto);
 
