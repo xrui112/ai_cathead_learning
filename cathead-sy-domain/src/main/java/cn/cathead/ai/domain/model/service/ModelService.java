@@ -9,6 +9,7 @@ import cn.cathead.ai.domain.model.model.entity.BaseModelEntity;
 import cn.cathead.ai.domain.model.repository.IModelRepository;
 import cn.cathead.ai.domain.model.service.ModelBean.IModelBeanManager;
 import cn.cathead.ai.domain.model.service.provider.IModelProvider;
+import cn.cathead.ai.types.exception.OptimisticLockException;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.model.ChatModel;
@@ -135,7 +136,11 @@ public class ModelService implements IModelService{
     @Override
     public void updateChatModelConfig(String modelId, ChatModelDTO chatModelDTO) {
         log.info("开始更新Chat模型配置，模型ID: {}", modelId);
-        
+        BaseModelEntity currentEntity = iModelRepository.queryModelById(modelId);
+        if (currentEntity == null) {
+            throw new IllegalArgumentException("模型不存在，模型ID: " + modelId);
+        }
+
         // 1. 构建新的ChatModelEntity
         ChatModelEntity chatModelEntity = ChatModelEntity.builder()
                 .modelId(modelId) // 保持原有ID
@@ -150,25 +155,23 @@ public class ModelService implements IModelService{
                 .presencePenalty(chatModelDTO.getPresencePenalty())
                 .frequencyPenalty(chatModelDTO.getFrequencyPenalty())
                 .stop(chatModelDTO.getStop())
+                .version(currentEntity.getVersion())
                 .build();
 
-        // 查询version 保证已经是最新
-        //select version
-
-        // 已经是最新的 那就更改 调用update model  同时记得version+1
         
-
-        // 2. 更新数据库
+    
+        // 3. 尝试更新（可能抛出OptimisticLockException）
+    try {
         iModelRepository.updateModelRecord(chatModelEntity);
         
-        // 3. 使用ModelBeanManager更新模型Bean
-        ChatModel newChatModel = modelBeanManager.updateChatModelBean(modelId, chatModelEntity);
+        // 4. 更新成功，刷新内存中的模型Bean
+        modelBeanManager.updateChatModelBean(modelId, chatModelEntity);
+        log.info("Chat模型配置更新成功，模型ID: {}", modelId);
         
-        if (newChatModel != null) {
-            log.info("Chat模型配置更新成功，模型ID: {}", modelId);
-        } else {
-            log.error("Chat模型配置更新失败，无法创建新模型，模型ID: {}", modelId);
-        }
+    } catch (OptimisticLockException e) {
+        log.warn("Chat模型配置更新失败，存在并发冲突，模型ID: {}", modelId);
+        throw e; // 重新抛出异常让Controller处理
+    }
     }
 
     @Override

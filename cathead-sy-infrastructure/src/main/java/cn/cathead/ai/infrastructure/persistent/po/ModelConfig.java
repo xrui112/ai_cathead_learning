@@ -5,6 +5,7 @@ import lombok.Data;
 
 @Data
 public class ModelConfig {
+    private Long id;  // 自增主键
     private String providerName;
     private String modelId;
     private String modelName;
@@ -22,6 +23,8 @@ public class ModelConfig {
 
     // Embedding 字段
     private String embeddingFormat;
-
     private Integer numPredict;
+
+    // 新增：乐观锁版本字段
+    private Long version;
 }

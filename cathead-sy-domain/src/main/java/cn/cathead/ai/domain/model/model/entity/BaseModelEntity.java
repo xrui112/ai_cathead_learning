@@ -16,4 +16,6 @@ public abstract class BaseModelEntity implements Serializable {
     private String url;
     private String key;
     private String type; // chat / embedding
+
+    private Long version;      // 乐观锁版本字段
 }

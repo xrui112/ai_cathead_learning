@@ -11,7 +11,7 @@ public interface IModelDao {
     ModelConfig queryModelById(ChatRequest chatRequest);
     
     // 新增的模型管理方法
-    void updateModelRecord(ModelConfig modelConfig);
+    int updateModelRecord(ModelConfig modelConfig);
     
     void deleteModelRecord(String modelId);
     

@@ -8,6 +8,7 @@ import cn.cathead.ai.domain.model.repository.IModelRepository;
 import cn.cathead.ai.infrastructure.persistent.dao.IModelDao;
 import cn.cathead.ai.infrastructure.persistent.po.ModelConfig;
 import cn.cathead.ai.infrastructure.persistent.po.ChatRequest;
+import cn.cathead.ai.types.exception.OptimisticLockException;
 import com.fasterxml.jackson.databind.ser.Serializers;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -97,6 +98,7 @@ public class ModelRepository implements IModelRepository {
 
     @Override
     public void updateModelRecord(BaseModelEntity baseModelEntity) {
+        int affectedRows;
         if ("chat".equalsIgnoreCase(baseModelEntity.getType())){
             ChatModelEntity chatModelEntity=(ChatModelEntity) baseModelEntity;
             ModelConfig modelConfig =new ModelConfig();
@@ -112,7 +114,7 @@ public class ModelRepository implements IModelRepository {
             modelConfig.setStop(Arrays.toString(chatModelEntity.getStop()));
             modelConfig.setFrequencyPenalty(chatModelEntity.getFrequencyPenalty());
             modelConfig.setPresencePenalty(chatModelEntity.getPresencePenalty());
-            iModelDao.updateModelRecord(modelConfig);
+            affectedRows=iModelDao.updateModelRecord(modelConfig);
         }else {
             EmbeddingModelEntity embeddingModelEntity=(EmbeddingModelEntity) baseModelEntity;
             ModelConfig modelConfig =new ModelConfig();
@@ -124,7 +126,11 @@ public class ModelRepository implements IModelRepository {
             modelConfig.setType(embeddingModelEntity.getType());
             modelConfig.setEmbeddingFormat(embeddingModelEntity.getEmbeddingFormat());
             modelConfig.setNumPredict(embeddingModelEntity.getNumPredict());
-            iModelDao.updateModelRecord(modelConfig);
+            affectedRows=iModelDao.updateModelRecord(modelConfig);
+        }
+        // 如果影响行数为0，抛出乐观锁异常
+        if (affectedRows == 0) {
+            throw new OptimisticLockException("模型配置更新失败，数据已被其他用户修改");
         }
     }
 
