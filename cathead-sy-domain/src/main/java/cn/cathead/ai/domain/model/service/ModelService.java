@@ -158,8 +158,6 @@ public class ModelService implements IModelService{
                 .version(currentEntity.getVersion())
                 .build();
 
-        
-    
         // 3. 尝试更新（可能抛出OptimisticLockException）
     try {
         iModelRepository.updateModelRecord(chatModelEntity);

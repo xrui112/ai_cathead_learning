@@ -2,6 +2,7 @@ package cn.cathead.ai.config;
 
 
 import ch.qos.logback.core.net.server.Client;
+import cn.cathead.ai.infrastructure.persistent.mcpserver.ComputerServices;
 import io.micrometer.observation.ObservationRegistry;
 import io.modelcontextprotocol.client.McpClient;
 import org.springframework.ai.chat.client.ChatClient;
@@ -65,12 +66,17 @@ public class OllamaConfig {
                 ModelManagementOptions.builder().build());
     }
 
+
+    @Autowired
+    private ComputerServices computerServices;
+
     @Bean
     public ChatClient chatClient(OllamaChatModel ollamaChatModel){
 
         return ChatClient
                 .builder(ollamaChatModel)
                 .defaultToolCallbacks(tools)
+                .defaultTools(computerServices)
                 .build();
 
     }
