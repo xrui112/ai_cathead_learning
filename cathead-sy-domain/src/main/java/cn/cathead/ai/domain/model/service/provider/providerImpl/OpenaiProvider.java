@@ -25,7 +25,7 @@ import java.util.List;
 @Slf4j
 @Component("openaiprovider")
 @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
-public class OpenaiProviderI implements IModelProvider {
+public class OpenaiProvider implements IModelProvider {
     @Override
     public ChatModel createChat(ChatModelEntity chatModelEntity) {
          OpenAiApi openAiApi= OpenAiApi
