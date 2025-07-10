@@ -49,9 +49,7 @@ public class MCPTest {
     public void test() {
         String userInput = "获取电脑配置";
         userInput = "获取电脑配置 在 C:/Users/15505/Desktop 文件夹下，创建 电脑.txt 把电脑配置写入 电脑.txt";
-
-        System.out.println("\n>>> QUESTION: " + userInput);
-        System.out.println("\n>>> ASSISTANT: " + chatClient.prompt(userInput).call().content());
+        System.out.println(chatClient.prompt(userInput).call().content());
     }
 
 }

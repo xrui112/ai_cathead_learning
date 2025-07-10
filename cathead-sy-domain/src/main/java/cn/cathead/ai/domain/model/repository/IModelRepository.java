@@ -7,7 +7,7 @@ import cn.cathead.ai.domain.model.model.entity.ChatRequestEntity;
 
 public interface IModelRepository {
 
-    void saveModelRecord(BaseModelEntity baseModelEntity);
+    long saveModelRecord(BaseModelEntity baseModelEntity);
 
     BaseModelEntity queryModelById(ChatRequestEntity chatRequestEntity);
 

@@ -6,7 +6,7 @@ import org.apache.ibatis.annotations.Mapper;
 @Mapper
 public interface IModelDao {
 
-    void  saveModelRecord(ModelConfig modelConfig);
+    long  saveModelRecord(ModelConfig modelConfig);
 
     ModelConfig queryModelById(ChatRequest chatRequest);
     

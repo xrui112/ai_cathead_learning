@@ -55,16 +55,24 @@ public class ModelService implements IModelService{
                 .stop(chatModelDTO.getStop())
                 .build();
 
-        // 使用ModelBeanManager创建模型Bean
-        ChatModel chatModel = modelBeanManager.createChatModelBean(chatModelEntity);
+        // 1. 创建模型实例
+        ChatModel chatModel = modelBeanManager.createChatModelInstance(chatModelEntity);
 
-        if(null==chatModel){
-                log.info("生成失败 : { }");
-        }else {
-            log.info("生成成功 名字: { }"+chatModelEntity.getModelName());
-            //存到数据库
-            iModelRepository.saveModelRecord(chatModelEntity);
+        if (chatModel == null) {
+            log.error("创建Chat模型实例失败: {}", chatModelEntity.getModelName());
+            return;
         }
+
+        // 2. 存储到数据库（获得version） 初始version是0
+        long version=iModelRepository.saveModelRecord(chatModelEntity);
+        // 设置版本号到实体对象中
+        chatModelEntity.setVersion(version);
+        log.info("Chat模型存储到数据库成功，模型ID: {}, 版本: {}", 
+                chatModelEntity.getModelId(), chatModelEntity.getVersion());
+
+        // 3. 存入缓存
+        modelBeanManager.saveChatModelToCache(chatModel, chatModelEntity);
+        log.info("Chat模型创建成功: {}", chatModelEntity.getModelName());
     }
 
     @Override
@@ -80,21 +88,33 @@ public class ModelService implements IModelService{
                 .numPredict(embeddingModelDTO.getNumPredict())
                 .build();
 
-        // 使用ModelBeanManager创建模型Bean
-        EmbeddingModel embeddingModel = modelBeanManager.createEmbeddingModelBean(embeddingModelEntity);
-            if(null==embeddingModel){
-                log.info("生成失败 : { }");
-            }else {
-                log.info("生成成功 名字: { }"+embeddingModelDTO.getModelName());
-                //存到数据库
-                iModelRepository.saveModelRecord(embeddingModelEntity);
-            }
+        // 1. 创建模型实例
+        EmbeddingModel embeddingModel = modelBeanManager.createEmbeddingModelInstance(embeddingModelEntity);
+
+        if (embeddingModel == null) {
+            log.error("创建Embedding模型实例失败: {}", embeddingModelEntity.getModelName());
+            return;
+        }
+
+        // 2. 存储到数据库（获得version）
+        long version = iModelRepository.saveModelRecord(embeddingModelEntity);
+        // 设置版本号到实体对象中
+        embeddingModelEntity.setVersion(version);
+        log.info("Embedding模型存储到数据库成功，模型ID: {}, 版本: {}", 
+                embeddingModelEntity.getModelId(), embeddingModelEntity.getVersion());
+
+        // 3. 存入缓存
+        modelBeanManager.saveEmbeddingModelToCache(embeddingModel, embeddingModelEntity);
+        log.info("Embedding模型创建成功: {}", embeddingModelEntity.getModelName());
     }
 
     /**
      *  对应使用chatModel
      * @param chatRequestDto
      * @return
+     *
+     * 需要注意的是,调用该接口之前,已经默认已经createModel 处理过了
+     *
      */
     @Override
     public Flux<ChatResponse> chatWith(ChatRequestDto chatRequestDto) {
@@ -103,21 +123,11 @@ public class ModelService implements IModelService{
                 .prompt(chatRequestDto.getPrompt())
                 .build();
 
-        //先检查ModelBeanManager中是否有
-        ChatModel chatModel = modelBeanManager.getChatModelBean(chatRequestDto.getModelId());
-
-        if(null!=chatModel){
-            //直接使用
-            return generateStream(chatModel, chatRequestDto.getPrompt());
-        }
+        // !!!!!!先检查并确保缓存是最新版本 所有的model使用 都要先ensureLatestChatModel检查version
+        ChatModel chatModel = ensureLatestChatModel(chatRequestDto.getModelId());
         
-        //如果ModelBeanManager中没有，从数据库加载并创建
-        ChatModelEntity chatModelEntity=(ChatModelEntity) iModelRepository.queryModelById(chatRequestEntity);
-        if (chatModelEntity != null) {
-            chatModel = modelBeanManager.createChatModelBean(chatModelEntity);
-            if (chatModel != null) {
-                return generateStream(chatModel, chatRequestEntity.getPrompt());
-            }
+        if (chatModel != null) {
+            return generateStream(chatModel, chatRequestDto.getPrompt());
         }
         
         log.error("未找到模型，模型ID: {}", chatRequestDto.getModelId());
@@ -161,9 +171,11 @@ public class ModelService implements IModelService{
         // 3. 尝试更新（可能抛出OptimisticLockException）
     try {
         iModelRepository.updateModelRecord(chatModelEntity);
-        
+
+        BaseModelEntity updatedEntity = iModelRepository.queryModelById(modelId);
+
         // 4. 更新成功，刷新内存中的模型Bean
-        modelBeanManager.updateChatModelBean(modelId, chatModelEntity);
+        modelBeanManager.updateChatModelBean(modelId, (ChatModelEntity) updatedEntity);
         log.info("Chat模型配置更新成功，模型ID: {}", modelId);
         
     } catch (OptimisticLockException e) {
@@ -175,6 +187,10 @@ public class ModelService implements IModelService{
     @Override
     public void updateEmbeddingModelConfig(String modelId, EmbeddingModelDTO embeddingModelDTO) {
         log.info("开始更新Embedding模型配置，模型ID: {}", modelId);
+        BaseModelEntity currentEntity = iModelRepository.queryModelById(modelId);
+        if (currentEntity == null) {
+            throw new IllegalArgumentException("模型不存在，模型ID: " + modelId);
+        }
         
         // 1. 构建新的EmbeddingModelEntity
         EmbeddingModelEntity embeddingModelEntity = EmbeddingModelEntity.builder()
@@ -186,18 +202,26 @@ public class ModelService implements IModelService{
                 .type(embeddingModelDTO.getType())
                 .embeddingFormat(embeddingModelDTO.getEmbeddingFormat())
                 .numPredict(embeddingModelDTO.getNumPredict())
+                .version(currentEntity.getVersion()) // 设置当前版本号
                 .build();
         
-        // 2. 更新数据库
-        iModelRepository.updateModelRecord(embeddingModelEntity);
-        
-        // 3. 使用ModelBeanManager更新模型Bean
-        EmbeddingModel newEmbeddingModel = modelBeanManager.updateEmbeddingModelBean(modelId, embeddingModelEntity);
-        
-        if (newEmbeddingModel != null) {
-            log.info("Embedding模型配置更新成功，模型ID: {}", modelId);
-        } else {
-            log.error("Embedding模型配置更新失败，无法创建新模型，模型ID: {}", modelId);
+        // 2. 尝试更新（可能抛出OptimisticLockException）
+        try {
+            iModelRepository.updateModelRecord(embeddingModelEntity);
+            
+            BaseModelEntity updatedEntity = iModelRepository.queryModelById(modelId);
+            
+            // 3. 使用ModelBeanManager更新模型Bean
+            EmbeddingModel newEmbeddingModel = modelBeanManager.updateEmbeddingModelBean(modelId, (EmbeddingModelEntity) updatedEntity);
+            
+            if (newEmbeddingModel != null) {
+                log.info("Embedding模型配置更新成功，模型ID: {}", modelId);
+            } else {
+                log.error("Embedding模型配置更新失败，无法创建新模型，模型ID: {}", modelId);
+            }
+        } catch (OptimisticLockException e) {
+            log.warn("Embedding模型配置更新失败，存在并发冲突，模型ID: {}", modelId);
+            throw e; // 重新抛出异常让Controller处理
         }
     }
 
@@ -220,9 +244,98 @@ public class ModelService implements IModelService{
         return iModelRepository.queryModelById(modelId);
     }
 
+    public EmbeddingModel getLatestEmbeddingModel(String modelId) {
+        return ensureLatestEmbeddingModel(modelId);
+    }
+
+    public ChatModel getLatestChatModel(String modelId) {
+        return ensureLatestChatModel(modelId);
+    }
+
+    public String getModelVersionStatus(String modelId) {
+        BaseModelEntity dbEntity = iModelRepository.queryModelById(modelId);
+        if (dbEntity == null) {
+            return String.format("模型[%s]不存在", modelId);
+        }
+        
+        Long cachedVersion = modelBeanManager.getCachedModelVersion(modelId);
+        Long dbVersion = dbEntity.getVersion();
+        
+        if (cachedVersion == null) {
+            return String.format("模型[%s]：缓存中不存在，数据库版本: %d", modelId, dbVersion);
+        }
+        
+        if (cachedVersion.equals(dbVersion)) {
+            return String.format("模型[%s]：缓存版本与数据库版本一致，版本: %d", modelId, dbVersion);
+        } else {
+            return String.format("模型[%s]：缓存版本过期，缓存版本: %d，数据库版本: %d", 
+                    modelId, cachedVersion, dbVersion);
+        }
+    }
+
+    private ChatModel ensureLatestChatModel(String modelId) {
+        log.debug("检查Chat模型版本，模型ID: {}", modelId);
+        // 1. 从数据库获取当前版本
+        ChatModelEntity currentEntity = (ChatModelEntity) iModelRepository.queryModelById(modelId);
+        if (currentEntity == null) {
+            log.warn("模型不存在，清理缓存，模型ID: {}", modelId);
+            modelBeanManager.removeChatModelBean(modelId);
+            return null;
+        }
+        // 2. 获取缓存版本信息
+        Long cachedVersion = modelBeanManager.getCachedModelVersion(modelId);
+        // 3. 判断是否需要更新缓存
+        if (cachedVersion == null) {
+            // 3.1缓存中没有，直接创建
+            log.debug("缓存中没有模型，创建新模型，模型ID: {}", modelId);
+            return modelBeanManager.updateChatModelBean(modelId, currentEntity);
+        } else if (cachedVersion.equals(currentEntity.getVersion())) {
+            // 3.2版本一致，直接返回
+            log.debug("缓存版本是最新的，直接返回缓存模型，模型ID: {}", modelId);
+            return modelBeanManager.getChatModelBean(modelId);
+        } else {
+            // 3.3版本过期，需要更新
+            log.info("缓存版本过期，更新Chat模型缓存，模型ID: {}, 数据库版本: {}, 缓存版本: {}",
+                    modelId, currentEntity.getVersion(), cachedVersion);
+            return modelBeanManager.updateChatModelBean(modelId, currentEntity);
+        }
+    }
+
+
+    private EmbeddingModel ensureLatestEmbeddingModel(String modelId) {
+        log.debug("检查Embedding模型版本，模型ID: {}", modelId);
+
+        // 1. 从数据库获取当前版本
+        EmbeddingModelEntity currentEntity = (EmbeddingModelEntity) iModelRepository.queryModelById(modelId);
+        if (currentEntity == null) {
+            log.warn("模型不存在，清理缓存，模型ID: {}", modelId);
+            modelBeanManager.removeEmbeddingModelBean(modelId);
+            return null;
+        }
+
+        // 2. 获取缓存版本信息
+        Long cachedVersion = modelBeanManager.getCachedModelVersion(modelId);
+
+        // 3. 判断是否需要更新缓存
+        if (cachedVersion == null) {
+            // 缓存中没有，直接创建
+            log.debug("缓存中没有模型，创建新模型，模型ID: {}", modelId);
+            return modelBeanManager.updateEmbeddingModelBean(modelId, currentEntity);
+        } else if (cachedVersion.equals(currentEntity.getVersion())) {
+            // 版本一致，直接返回
+            log.debug("缓存版本是最新的，直接返回缓存模型，模型ID: {}", modelId);
+            return modelBeanManager.getEmbeddingModelBean(modelId);
+        } else {
+            // 版本过期，需要更新
+            log.info("缓存版本过期，更新Embedding模型缓存，模型ID: {}, 数据库版本: {}, 缓存版本: {}",
+                    modelId, currentEntity.getVersion(), cachedVersion);
+            return modelBeanManager.updateEmbeddingModelBean(modelId, currentEntity);
+        }
+    }
+
     @Override
     public void refreshModelCache(String modelId) {
-        log.info("开始刷新模型Bean，模型ID: {}", modelId);
+        log.info("开始强制刷新模型Bean，模型ID: {}", modelId);
         
         // 1. 从数据库重新加载模型信息
         BaseModelEntity modelEntity = iModelRepository.queryModelById(modelId);
@@ -231,17 +344,25 @@ public class ModelService implements IModelService{
             return;
         }
         
-        // 2. 使用ModelBeanManager重新创建模型Bean
+        // 2. 强制更新缓存，不进行版本检查
+        log.info("强制刷新模型缓存，模型ID: {}, 数据库版本: {}, 原缓存版本: {}", 
+                modelId, modelEntity.getVersion(), modelBeanManager.getCachedModelVersion(modelId));
+        
+        // 3. 使用ModelBeanManager重新创建模型Bean
         if ("chat".equalsIgnoreCase(modelEntity.getType())) {
             ChatModel chatModel = modelBeanManager.updateChatModelBean(modelId, (ChatModelEntity) modelEntity);
             if (chatModel != null) {
-                log.info("Chat模型Bean刷新成功，模型ID: {}", modelId);
+                log.info("Chat模型Bean强制刷新成功，模型ID: {}, 新版本: {}", 
+                        modelId, modelEntity.getVersion());
             }
-        } else {
+        } else if ("embedding".equalsIgnoreCase(modelEntity.getType())) {
             EmbeddingModel embeddingModel = modelBeanManager.updateEmbeddingModelBean(modelId, (EmbeddingModelEntity) modelEntity);
             if (embeddingModel != null) {
-                log.info("Embedding模型Bean刷新成功，模型ID: {}", modelId);
+                log.info("Embedding模型Bean强制刷新成功，模型ID: {}, 新版本: {}", 
+                        modelId, modelEntity.getVersion());
             }
+        } else {
+            log.warn("未知的模型类型，无法刷新，模型ID: {}, 类型: {}", modelId, modelEntity.getType());
         }
     }
 }

@@ -26,9 +26,12 @@ public class ModelRepository implements IModelRepository {
 
     @Resource
     private IModelDao iModelDao;
+
+
     @Override
-    public void saveModelRecord(BaseModelEntity baseModelEntity) {
+    public long saveModelRecord(BaseModelEntity baseModelEntity) {
         //redis 不存了 存数据库就行
+        long version;
         if ("chat".equalsIgnoreCase(baseModelEntity.getType())){
 
             ChatModelEntity chatModelEntity=(ChatModelEntity) baseModelEntity;
@@ -45,7 +48,7 @@ public class ModelRepository implements IModelRepository {
             modelConfig.setStop(Arrays.toString(chatModelEntity.getStop()));
             modelConfig.setFrequencyPenalty(chatModelEntity.getFrequencyPenalty());
             modelConfig.setPresencePenalty(chatModelEntity.getPresencePenalty());
-            iModelDao.saveModelRecord(modelConfig);
+            version=iModelDao.saveModelRecord(modelConfig);
 
         }else {
             EmbeddingModelEntity embeddingModelEntity=(EmbeddingModelEntity) baseModelEntity;
@@ -58,12 +61,10 @@ public class ModelRepository implements IModelRepository {
             modelConfig.setType(embeddingModelEntity.getType());
             modelConfig.setEmbeddingFormat(embeddingModelEntity.getEmbeddingFormat());
             modelConfig.setNumPredict(embeddingModelEntity.getNumPredict());
-            iModelDao.saveModelRecord(modelConfig);
+            version=iModelDao.saveModelRecord(modelConfig);
 
         }
-
-
-
+        return version;
     }
 
     @Override
@@ -73,7 +74,6 @@ public class ModelRepository implements IModelRepository {
         chatRequest.setPrompt(chatRequestEntity.getPrompt());
         ModelConfig modelConfig =iModelDao.queryModelById(chatRequest);
 
-        //todo  区分不同模型
         if("chat".equalsIgnoreCase(modelConfig.getType())){
             return ChatModelEntity.builder()
                     .providerName(modelConfig.getProviderName())
@@ -81,6 +81,14 @@ public class ModelRepository implements IModelRepository {
                     .modelName(modelConfig.getModelName())
                     .url(modelConfig.getUrl())
                     .key(modelConfig.getKey())
+                    .type(modelConfig.getType())
+                    .temperature(modelConfig.getTemperature())
+                    .topP(modelConfig.getTopP())
+                    .maxTokens(modelConfig.getMaxTokens())
+                    .stop(modelConfig.getStop() != null ? modelConfig.getStop().split(",") : null)
+                    .frequencyPenalty(modelConfig.getFrequencyPenalty())
+                    .presencePenalty(modelConfig.getPresencePenalty())
+                    .version(modelConfig.getVersion())  // 添加版本号
                     .build();
         }else{
             return EmbeddingModelEntity.builder()
@@ -89,9 +97,10 @@ public class ModelRepository implements IModelRepository {
                     .modelName(modelConfig.getModelName())
                     .url(modelConfig.getUrl())
                     .key(modelConfig.getKey())
-                    .type(modelConfig.getType())                      // 如果 EmbeddingModelEntity 有 type 字段
-                    .embeddingFormat(modelConfig.getEmbeddingFormat()) // 如果 EmbeddingModelEntity 有 embeddingFormat 字段
-                    .numPredict(modelConfig.getNumPredict())           // 如果 EmbeddingModelEntity 有 numPredict 字段
+                    .type(modelConfig.getType())
+                    .embeddingFormat(modelConfig.getEmbeddingFormat())
+                    .numPredict(modelConfig.getNumPredict())
+                    .version(modelConfig.getVersion())  // 添加版本号
                     .build();
         }
     }
@@ -114,6 +123,7 @@ public class ModelRepository implements IModelRepository {
             modelConfig.setStop(Arrays.toString(chatModelEntity.getStop()));
             modelConfig.setFrequencyPenalty(chatModelEntity.getFrequencyPenalty());
             modelConfig.setPresencePenalty(chatModelEntity.getPresencePenalty());
+            modelConfig.setVersion(chatModelEntity.getVersion());
             affectedRows=iModelDao.updateModelRecord(modelConfig);
         }else {
             EmbeddingModelEntity embeddingModelEntity=(EmbeddingModelEntity) baseModelEntity;
@@ -126,6 +136,7 @@ public class ModelRepository implements IModelRepository {
             modelConfig.setType(embeddingModelEntity.getType());
             modelConfig.setEmbeddingFormat(embeddingModelEntity.getEmbeddingFormat());
             modelConfig.setNumPredict(embeddingModelEntity.getNumPredict());
+            modelConfig.setVersion(embeddingModelEntity.getVersion());
             affectedRows=iModelDao.updateModelRecord(modelConfig);
         }
         // 如果影响行数为0，抛出乐观锁异常
@@ -160,6 +171,7 @@ public class ModelRepository implements IModelRepository {
                     .stop(modelConfig.getStop() != null ? modelConfig.getStop().split(",") : null)
                     .frequencyPenalty(modelConfig.getFrequencyPenalty())
                     .presencePenalty(modelConfig.getPresencePenalty())
+                    .version(modelConfig.getVersion())  // 添加版本号
                     .build();
         }else{
             return EmbeddingModelEntity.builder()
@@ -171,6 +183,7 @@ public class ModelRepository implements IModelRepository {
                     .type(modelConfig.getType())
                     .embeddingFormat(modelConfig.getEmbeddingFormat())
                     .numPredict(modelConfig.getNumPredict())
+                    .version(modelConfig.getVersion())  // 添加版本号
                     .build();
         }
     }

@@ -21,9 +21,8 @@ import java.util.List;
 @Slf4j
 @Component("ollamaprovider")
 @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
-public class OllamaProviderI implements IModelProvider {
+public class OllamaProvider implements IModelProvider {
 
-    //todo 在provider里面进行chat or 向量模型的区分
     //初次创建
     @Override
     public OllamaChatModel createChat(ChatModelEntity chatModelEntity) {
