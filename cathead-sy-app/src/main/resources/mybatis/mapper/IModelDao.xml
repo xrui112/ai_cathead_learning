@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.cathead.ai.infrastructure.persistent.dao.IModelDao">
+
+    <!-- 结果映射，将数据库字段映射到 ModelConfig 类的属性 -->
+    <resultMap id="dataMap" type="cn.cathead.ai.infrastructure.persistent.po.ModelConfig">
+        <id column="id" property="id"/>
+        <result column="model_id" property="modelId"/>
+        <result column="provider_name" property="providerName"/>
+        <result column="model_name" property="modelName"/>
+        <result column="url" property="url"/>
+        <result column="key" property="key"/>
+        <result column="type" property="type"/>
+        <!-- 额外字段：Chat 和 Embedding 特有 -->
+        <result column="temperature" property="temperature"/>
+        <result column="top_p" property="topP"/>
+        <result column="max_tokens" property="maxTokens"/>
+        <result column="stop" property="stop"/>
+        <result column="frequency_penalty" property="frequencyPenalty"/>
+        <result column="presence_penalty" property="presencePenalty"/>
+        <result column="embedding_format" property="embeddingFormat"/>
+        <result column="num_predict" property="numPredict"/>
+                <!-- 乐观锁版本字段 -->
+        <result column="version" property="version"/>
+    </resultMap>
+
+    <!-- 插入模型记录 -->
+    <insert id="saveModelRecord" parameterType="cn.cathead.ai.infrastructure.persistent.po.ModelConfig">
+        <selectKey keyProperty="version" resultType="long" order="AFTER">
+            SELECT 0 as version
+        </selectKey>
+        INSERT INTO model (
+            model_id, model_name, provider_name, url, `key`, type,
+            temperature, top_p, max_tokens, stop,
+            frequency_penalty, presence_penalty, embedding_format, num_predict,
+            version
+        )
+        VALUES (
+            #{modelId}, #{modelName}, #{providerName}, #{url}, #{key}, #{type},
+            #{temperature}, #{topP}, #{maxTokens}, #{stop},
+            #{frequencyPenalty}, #{presencePenalty}, #{embeddingFormat}, #{numPredict},
+            0
+        )
+    </insert>
+
+    <!-- 根据模型 ID 查询模型记录 -->
+    <select id="queryModelById" resultMap="dataMap" parameterType="String">
+        SELECT
+            id, model_id, model_name, provider_name, url, `key`, type,
+            temperature, top_p, max_tokens, stop,
+            frequency_penalty, presence_penalty, embedding_format, num_predict,
+            version
+        FROM
+            model
+        WHERE
+            model_id = #{modelId}
+    </select>
+
+    <!-- 更新模型记录 (使用乐观锁) -->
+    <update id="updateModelRecord" parameterType="cn.cathead.ai.infrastructure.persistent.po.ModelConfig">
+        UPDATE model
+        SET
+            model_name = #{modelName},
+            provider_name = #{providerName},
+            url = #{url},
+            `key` = #{key},
+            type = #{type},
+            temperature = #{temperature},
+            top_p = #{topP},
+            max_tokens = #{maxTokens},
+            stop = #{stop},
+            frequency_penalty = #{frequencyPenalty},
+            presence_penalty = #{presencePenalty},
+            embedding_format = #{embeddingFormat},
+            num_predict = #{numPredict},
+            version = version + 1
+        WHERE
+            model_id = #{modelId} AND version = #{version}
+    </update>
+
+    <!-- 删除模型记录 -->
+    <delete id="deleteModelRecord" parameterType="String">
+        DELETE FROM model
+        WHERE model_id = #{modelId}
+    </delete>
+
+</mapper>
