@@ -8,10 +8,14 @@ import cn.cathead.ai.api.dto.EmbeddingModelDTO;
 import cn.cathead.ai.domain.model.model.entity.ChatModelEntity;
 import cn.cathead.ai.domain.model.model.entity.ChatRequestEntity;
 import cn.cathead.ai.domain.model.model.entity.BaseModelEntity;
+import cn.cathead.ai.domain.model.model.entity.FormConfiguration;
+import cn.cathead.ai.domain.model.model.entity.ValidationResult;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.embedding.EmbeddingModel;
 import reactor.core.publisher.Flux;
+
+import java.util.Map;
 
 public interface IModelService {
 
@@ -31,18 +35,9 @@ public interface IModelService {
 
     public void refreshModelCache(String modelId);
 
-    /**
-     * 获取最新版本的Embedding模型
-     * @param modelId 模型ID
-     * @return 最新版本的Embedding模型，如果不存在返回null
-     */
+
     public EmbeddingModel getLatestEmbeddingModel(String modelId);
 
-    /**
-     * 获取最新版本的Chat模型
-     * @param modelId 模型ID
-     * @return 最新版本的Chat模型，如果不存在返回null
-     */
     public ChatModel getLatestChatModel(String modelId);
 
     /**
@@ -51,5 +46,32 @@ public interface IModelService {
      * @return 版本状态信息
      */
     public String getModelVersionStatus(String modelId);
+
+    
+    /**
+     * 获取动态表单配置
+     * @param provider 提供商
+     * @param type 模型类型
+     * @return 表单配置
+     */
+    FormConfiguration getFormConfiguration(String provider, String type);
+    
+    /**
+     * 校验动态表单数据
+     * @param provider 提供商
+     * @param type 模型类型
+     * @param formData 表单数据
+     * @return 校验结果
+     */
+    ValidationResult validateFormData(String provider, String type, Map<String, Object> formData);
+    
+    /**
+     * 提交动态表单并创建模型
+     * @param provider 提供商
+     * @param type 模型类型
+     * @param formData 表单数据
+     * @return 创建结果信息
+     */
+    String submitForm(String provider, String type, Map<String, Object> formData);
 
 }

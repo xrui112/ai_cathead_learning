@@ -6,7 +6,10 @@ import cn.cathead.ai.domain.model.model.entity.ChatModelEntity;
 import cn.cathead.ai.domain.model.model.entity.ChatRequestEntity;
 import cn.cathead.ai.domain.model.model.entity.EmbeddingModelEntity;
 import cn.cathead.ai.domain.model.model.entity.BaseModelEntity;
+import cn.cathead.ai.domain.model.model.entity.FormConfiguration;
+import cn.cathead.ai.domain.model.model.entity.ValidationResult;
 import cn.cathead.ai.domain.model.repository.IModelRepository;
+import cn.cathead.ai.domain.model.service.DynamicForm.IDynamicForm;
 import cn.cathead.ai.domain.model.service.ModelBean.IModelBeanManager;
 import cn.cathead.ai.domain.model.service.provider.IModelProvider;
 import cn.cathead.ai.types.exception.OptimisticLockException;
@@ -26,7 +29,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 @Slf4j
-public class ModelService implements IModelService{
+public class ModelService implements IModelService {
 
     @Resource
     private Map<String, IModelProvider> modelProviderMap = new ConcurrentHashMap<>();
@@ -37,6 +40,10 @@ public class ModelService implements IModelService{
     // 使用接口来管理模型Bean
     @Resource
     private IModelBeanManager modelBeanManager;
+
+    // 动态表单服务
+    @Resource
+    private IDynamicForm dynamicForm;
 
     @Override
     public void creatModel(ChatModelDTO chatModelDTO) {
@@ -207,17 +214,17 @@ public class ModelService implements IModelService{
         
         // 2. 尝试更新（可能抛出OptimisticLockException）
         try {
-            iModelRepository.updateModelRecord(embeddingModelEntity);
-            
-            BaseModelEntity updatedEntity = iModelRepository.queryModelById(modelId);
-            
-            // 3. 使用ModelBeanManager更新模型Bean
-            EmbeddingModel newEmbeddingModel = modelBeanManager.updateEmbeddingModelBean(modelId, (EmbeddingModelEntity) updatedEntity);
-            
-            if (newEmbeddingModel != null) {
-                log.info("Embedding模型配置更新成功，模型ID: {}", modelId);
-            } else {
-                log.error("Embedding模型配置更新失败，无法创建新模型，模型ID: {}", modelId);
+        iModelRepository.updateModelRecord(embeddingModelEntity);
+
+        BaseModelEntity updatedEntity = iModelRepository.queryModelById(modelId);
+        
+        // 3. 使用ModelBeanManager更新模型Bean
+        EmbeddingModel newEmbeddingModel = modelBeanManager.updateEmbeddingModelBean(modelId, (EmbeddingModelEntity) updatedEntity);
+        
+        if (newEmbeddingModel != null) {
+            log.info("Embedding模型配置更新成功，模型ID: {}", modelId);
+        } else {
+            log.error("Embedding模型配置更新失败，无法创建新模型，模型ID: {}", modelId);
             }
         } catch (OptimisticLockException e) {
             log.warn("Embedding模型配置更新失败，存在并发冲突，模型ID: {}", modelId);
@@ -364,5 +371,24 @@ public class ModelService implements IModelService{
         } else {
             log.warn("未知的模型类型，无法刷新，模型ID: {}, 类型: {}", modelId, modelEntity.getType());
         }
+    }
+
+    
+    @Override
+    public FormConfiguration getFormConfiguration(String provider, String type) {
+        log.info("获取动态表单配置，provider: {}, type: {}", provider, type);
+        return dynamicForm.getFormConfiguration(provider, type);
+    }
+    
+    @Override
+    public ValidationResult validateFormData(String provider, String type, Map<String, Object> formData) {
+        log.info("校验动态表单数据，provider: {}, type: {}", provider, type);
+        return dynamicForm.validateFormData(provider, type, formData);
+    }
+    
+    @Override
+    public String submitForm(String provider, String type, Map<String, Object> formData) {
+        log.info("提交动态表单，provider: {}, type: {}", provider, type);
+        return dynamicForm.submitForm(provider, type, formData);
     }
 }

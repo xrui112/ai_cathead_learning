@@ -123,6 +123,13 @@
                 <version>3.0.3</version>
             </dependency>
 
+            <!-- Jackson YAML 支持 -->
+            <dependency>
+                <groupId>com.fasterxml.jackson.dataformat</groupId>
+                <artifactId>jackson-dataformat-yaml</artifactId>
+                <version>2.15.2</version>
+            </dependency>
+
 
 
 

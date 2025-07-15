@@ -4,6 +4,8 @@ import cn.cathead.ai.api.dto.ChatModelDTO;
 import cn.cathead.ai.api.dto.ChatRequestDto;
 import cn.cathead.ai.api.dto.EmbeddingModelDTO;
 import cn.cathead.ai.domain.model.model.entity.BaseModelEntity;
+import cn.cathead.ai.domain.model.model.entity.FormConfiguration;
+import cn.cathead.ai.domain.model.model.entity.ValidationResult;
 import cn.cathead.ai.domain.model.service.ModelBean.IModelBeanManager;
 import cn.cathead.ai.domain.model.service.IModelService;
 import cn.cathead.ai.types.model.Response;
@@ -14,8 +16,6 @@ import reactor.core.publisher.Flux;
 
 import java.util.HashMap;
 import java.util.Map;
-
-
 
 //todo responseCode and info 还没有规范
 /**
@@ -194,41 +194,80 @@ public class ModelServiceController {
     }
 
     /**
-     * 获取系统健康状态
-     * @return 系统健康状态
+     * 获取动态表单配置
+     * 前端首先提供Provider&type选择(供应商&chat/embedding模型)
+     * 再调用此接口获取对应模型供应商配置
+     * 
+     * @param provider 提供商 (如: ollama, openai)
+     * @param type 模型类型 (如: chat, embedding)
+     * @return 表单配置信息
      */
-    @GetMapping("model/health")
-    public Response<Map<String, Object>> getHealthStatus() {
+    @GetMapping("model-form/config")
+    public Response<FormConfiguration> getFormConfiguration(@RequestParam String provider, 
+                                                           @RequestParam String type) {
         try {
-            Map<String, Object> health = new HashMap<>();
-            health.put("status", "UP");
-            health.put(" chatModelCache", modelBeanManager.getAllChatModelCache().size());
-            health.put("embeddingModelCache", modelBeanManager.getAllEmbeddingModelCache().size());
-            health.put("beanStats", modelBeanManager.getModelBeanStats());
-            health.put("timestamp", System.currentTimeMillis());
-            
-            return new Response<>("0000", "系统运行正常", health);
+            log.info("收到获取动态表单配置请求，provider: {}, type: {}", provider, type);
+            FormConfiguration config = modelService.getFormConfiguration(provider, type);
+            if (config != null) {
+                return new Response<>("00004", "获取表单配置成功", config);
+            } else {
+                return new Response<>("0005", "不支持的提供商或类型: " + provider + ":" + type, null);
+            }
         } catch (Exception e) {
-            log.error("获取系统健康状态失败，错误: {}", e.getMessage(), e);
-            return new Response<>("0001", "获取系统健康状态失败: " + e.getMessage(), null);
+            log.error("获取动态表单配置失败，provider: {}, type: {}, 错误: {}", 
+                    provider, type, e.getMessage(), e);
+            return new Response<>("0006", "获取表单配置失败: " + e.getMessage(), null);
         }
     }
-
+    
     /**
-     * 上面为model相关的接口
-     *
-     * 下面为dynamicform相关的接口
-     *
-     * 前端首先提供Provider&type选择(供应商&chat/embedding模型)
-     *
-     * 再调用/model-form/config?provider=ollama&type=chat 获取对应模型供应商配置
-     *
-     * 用户提交表格:
-     * 先通过/model-form/validate 走校验逻辑
-     *
-     * 再通过 /api/model-form/submit 提交
+     * 校验动态表单数据
+     * 用户提交表格时，先通过此接口走校验逻辑
+     * @param provider 提供商
+     * @param type 模型类型
+     * @param formData 表单数据
+     * @return 校验结果
      */
-
-
-
+    @PostMapping("model-form/validate")
+    public Response<ValidationResult> validateFormData(@RequestParam String provider,
+                                                      @RequestParam String type,
+                                                      @RequestBody Map<String, Object> formData) {
+        try {
+            log.info("收到校验动态表单数据请求，provider: {}, type: {}", provider, type);
+            ValidationResult result = modelService.validateFormData(provider, type, formData);
+            if (result.isValid()) {
+                return new Response<>("0007", "表单数据校验通过", result);
+            } else {
+                return new Response<>("0008", "表单数据校验失败", result);
+            }
+        } catch (Exception e) {
+            log.error("校验动态表单数据失败，provider: {}, type: {}, 错误: {}", 
+                    provider, type, e.getMessage(), e);
+            return new Response<>("0008", "表单数据校验失败: " + e.getMessage(), null);
+        }
+    }
+    
+    /**
+     * 提交动态表单并创建模型
+     * 用户提交表格时，校验通过后调用此接口提交
+     * 
+     * @param provider 提供商
+     * @param type 模型类型
+     * @param formData 表单数据
+     * @return 创建结果
+     */
+    @PostMapping("model-form/submit")
+    public Response<String> submitForm(@RequestParam String provider,
+                                      @RequestParam String type,
+                                      @RequestBody Map<String, Object> formData) {
+        try {
+            log.info("收到提交动态表单请求，provider: {}, type: {}", provider, type);
+            String result = modelService.submitForm(provider, type, formData);
+            return new Response<>("0009", result, null);
+        } catch (Exception e) {
+            log.error("提交动态表单失败，provider: {}, type: {}, 错误: {}", 
+                    provider, type, e.getMessage(), e);
+            return new Response<>("0010", "提交表单失败: " + e.getMessage(), null);
+        }
+    }
 }

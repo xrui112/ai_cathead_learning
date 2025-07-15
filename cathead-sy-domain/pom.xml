@@ -87,6 +87,12 @@
             <artifactId>spring-ai-openai</artifactId>
         </dependency>
 
+        <!-- Jackson YAML 支持 -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.dataformat</groupId>
+            <artifactId>jackson-dataformat-yaml</artifactId>
+        </dependency>
+
 
     </dependencies>
 
