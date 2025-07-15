@@ -33,10 +33,9 @@ public class FormConfigurationManager {
             // 从classpath加载YAML配置文件
             ClassPathResource resource = new ClassPathResource("dynamicForm/dynamic-form.yml");
             if (!resource.exists()) {
-                log.warn("动态表单配置文件不存在: dynamic-form/dynamic-form.yml");
+                log.warn("动态表单配置文件不存在: dynamicForm/dynamic-form.yml");
                 return;
             }
-            
             try (InputStream inputStream = resource.getInputStream()) {
                 // 解析YAML配置
                 Map<String, Object> yamlConfig = yamlMapper.readValue(inputStream, Map.class);
@@ -47,19 +46,9 @@ public class FormConfigurationManager {
                     log.warn("未找到表单配置项");
                     return;
                 }
+                
                 // 解析每个配置项
-                /**  configMap:
-                 * 1    provider: "ollama"
-                 *     type: "chat"
-                 *     ....
-                 *
-                 * 2    provider: "ollama"
-                 *      type: "embedding"
-                 *      ....
-                 *
-                 */
                 for (Map<String, Object> configMap : configs) {
-
                     FormConfiguration config = parseFormConfiguration(configMap);
                     if (config != null) {
                         String key = config.getProvider() + ":" + config.getType();
@@ -116,37 +105,36 @@ public class FormConfigurationManager {
             String name = (String) fieldMap.get("name");
             String label = (String) fieldMap.get("label");
             String typeStr = (String) fieldMap.get("type");
-            Boolean required = (Boolean) fieldMap.get("required");
+            
+            if (name == null || label == null || typeStr == null) {
+                log.warn("字段定义缺少必要属性: name={}, label={}, type={}", name, label, typeStr);
+                return null;
+            }
+            
+            FieldType type = FieldType.valueOf(typeStr);
+            boolean required = Boolean.TRUE.equals(fieldMap.get("required"));
+            boolean visible = !Boolean.FALSE.equals(fieldMap.get("visible")); // 默认可见
             Object defaultValue = fieldMap.get("defaultValue");
-            List<String> options = (List<String>) fieldMap.get("options");
             String description = (String) fieldMap.get("description");
-            Boolean visible = (Boolean) fieldMap.get("visible");
-            
-            if (name == null) {
-                log.warn("字段定义缺少name属性: {}", fieldMap);
-                return null;
-            }
-            
-            // 解析字段类型
-            FieldType fieldType = parseFieldType(typeStr);
-            if (fieldType == null) {
-                log.warn("未知的字段类型: {}", typeStr);
-                return null;
-            }
+            List<String> options = (List<String>) fieldMap.get("options");
             
             // 解析验证规则
-            FieldValidation validation = parseFieldValidation((Map<String, Object>) fieldMap.get("validation"));
+            FieldValidation validation = null;
+            Map<String, Object> validationMap = (Map<String, Object>) fieldMap.get("validation");
+            if (validationMap != null) {
+                validation = parseFieldValidation(validationMap);
+            }
             
             return FieldDefinition.builder()
                     .name(name)
-                    .label(label != null ? label : name)
-                    .type(fieldType)
-                    .required(required != null ? required : false)
+                    .label(label)
+                    .type(type)
+                    .required(required)
+                    .visible(visible)
                     .defaultValue(defaultValue)
+                    .description(description)
                     .options(options)
                     .validation(validation)
-                    .description(description)
-                    .visible(visible != null ? visible : true)
                     .build();
                     
         } catch (Exception e) {
@@ -156,39 +144,28 @@ public class FormConfigurationManager {
     }
     
     /**
-     * 解析字段类型
-     */
-    private FieldType parseFieldType(String typeStr) {
-        if (typeStr == null) {
-            return FieldType.TEXT; // 默认为文本类型
-        }
-        
-        try {
-            return FieldType.valueOf(typeStr.toUpperCase());
-        } catch (IllegalArgumentException e) {
-            log.warn("无法解析字段类型: {}", typeStr);
-            return null;
-        }
-    }
-    
-    /**
      * 解析字段验证规则
      */
     private FieldValidation parseFieldValidation(Map<String, Object> validationMap) {
-        if (validationMap == null) {
-            return null;
-        }
-        
         try {
+            Integer minLength = safeCastToInteger(validationMap.get("minLength"));
+            Integer maxLength = safeCastToInteger(validationMap.get("maxLength"));
+            Double minValue = safeCastToDouble(validationMap.get("minValue"));
+            Double maxValue = safeCastToDouble(validationMap.get("maxValue"));
+            String pattern = (String) validationMap.get("pattern");
+            List<String> allowedValues = (List<String>) validationMap.get("allowedValues");
+            String customValidator = (String) validationMap.get("customValidator");
+            
             return FieldValidation.builder()
-                    .minLength(safeCastToInteger(validationMap.get("minLength")))
-                    .maxLength(safeCastToInteger(validationMap.get("maxLength")))
-                    .minValue(safeCastToDouble(validationMap.get("minValue")))
-                    .maxValue(safeCastToDouble(validationMap.get("maxValue")))
-                    .pattern((String) validationMap.get("pattern"))
-                    .allowedValues((List<String>) validationMap.get("allowedValues"))
-                    .customValidator((String) validationMap.get("customValidator"))
+                    .minLength(minLength)
+                    .maxLength(maxLength)
+                    .minValue(minValue)
+                    .maxValue(maxValue)
+                    .pattern(pattern)
+                    .allowedValues(allowedValues)
+                    .customValidator(customValidator)
                     .build();
+                    
         } catch (Exception e) {
             log.error("解析字段验证规则失败: {}", validationMap, e);
             return null;
@@ -240,38 +217,5 @@ public class FormConfigurationManager {
     public FormConfiguration getFormConfiguration(String provider, String type) {
         String key = provider + ":" + type;
         return configCache.get(key);
-    }
-    
-    public List<FieldDefinition> getVisibleFields(String provider, String type) {
-        FormConfiguration config = getFormConfiguration(provider, type);
-        if (config == null) {
-            return List.of();
-        }
-        return config.getFields().stream()
-                .filter(FieldDefinition::isVisible)
-                .collect(Collectors.toList());
-    }
-    
-    /**
-     * 获取所有已加载的配置
-     */
-    public Map<String, FormConfiguration> getAllConfigurations() {
-        return new ConcurrentHashMap<>(configCache);
-    }
-    
-    /**
-     * 重新加载配置
-     */
-    public void reloadConfigurations() {
-        configCache.clear();
-        loadConfigurations();
-    }
-    
-    /**
-     * 检查配置是否存在
-     */
-    public boolean hasConfiguration(String provider, String type) {
-        String key = provider + ":" + type;
-        return configCache.containsKey(key);
     }
 }

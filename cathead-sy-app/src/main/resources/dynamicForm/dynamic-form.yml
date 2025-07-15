@@ -1,4 +1,4 @@
-# model-form-config.yml
+# 动态表单配置文件
 form-configurations:
   # Ollama Chat模型配置
   - provider: "ollama"
@@ -96,7 +96,38 @@ form-configurations:
   - provider: "openai"
     type: "chat"
     fields:
-      # 基础字段与ollama相同，但key为必填
+      - name: "providerName"
+        label: "提供商名称"
+        type: "TEXT"
+        required: true
+        defaultValue: "openai"
+        validation:
+          allowedValues: ["openai"]
+
+      - name: "modelId"
+        label: "模型ID"
+        type: "TEXT"
+        required: true
+        validation:
+          pattern: "^[a-zA-Z0-9_-]+$"
+          minLength: 1
+          maxLength: 64
+
+      - name: "modelName"
+        label: "模型名称"
+        type: "SELECT"
+        required: true
+        defaultValue: "gpt-3.5-turbo"
+        options: ["gpt-3.5-turbo", "gpt-4", "gpt-4-turbo", "gpt-4o"]
+
+      - name: "url"
+        label: "服务地址"
+        type: "TEXT"
+        required: true
+        defaultValue: "https://api.openai.com"
+        validation:
+          pattern: "^https?://.+"
+
       - name: "key"
         label: "API密钥"
         type: "PASSWORD"
@@ -105,13 +136,98 @@ form-configurations:
           pattern: "^sk-.+"
           minLength: 20
 
-      # 其他字段继承通用配置...
+      - name: "temperature"
+        label: "温度"
+        type: "NUMBER"
+        required: false
+        defaultValue: 0.7
+        validation:
+          minValue: 0.0
+          maxValue: 2.0
+
+      - name: "topP"
+        label: "Top P"
+        type: "NUMBER"
+        required: false
+        defaultValue: 0.9
+        validation:
+          minValue: 0.0
+          maxValue: 1.0
+
+      - name: "maxTokens"
+        label: "最大Token数"
+        type: "NUMBER"
+        required: false
+        defaultValue: 2048
+        validation:
+          minValue: 1
+          maxValue: 8192
+
+      - name: "stop"
+        label: "停止词"
+        type: "TEXTAREA"
+        required: false
+        description: "多个停止词用逗号分隔"
+
+      - name: "frequencyPenalty"
+        label: "频率惩罚"
+        type: "NUMBER"
+        required: false
+        defaultValue: 0.0
+        validation:
+          minValue: -2.0
+          maxValue: 2.0
+
+      - name: "presencePenalty"
+        label: "存在惩罚"
+        type: "NUMBER"
+        required: false
+        defaultValue: 0.0
+        validation:
+          minValue: -2.0
+          maxValue: 2.0
 
   # Ollama Embedding模型配置
   - provider: "ollama"
     type: "embedding"
     fields:
-      # 通用字段...
+      - name: "providerName"
+        label: "提供商名称"
+        type: "TEXT"
+        required: true
+        defaultValue: "ollama"
+        validation:
+          allowedValues: ["ollama"]
+
+      - name: "modelId"
+        label: "模型ID"
+        type: "TEXT"
+        required: true
+        validation:
+          pattern: "^[a-zA-Z0-9_-]+$"
+          minLength: 1
+          maxLength: 64
+
+      - name: "modelName"
+        label: "模型名称"
+        type: "TEXT"
+        required: true
+        validation:
+          minLength: 1
+          maxLength: 128
+
+      - name: "url"
+        label: "服务地址"
+        type: "TEXT"
+        required: true
+        defaultValue: "http://localhost:11434"
+        validation:
+          pattern: "^https?://.+"
+
+      # Ollama不需要key字段
+      - name: "key"
+        visible: false
+
       - name: "embeddingFormat"
         label: "Embedding格式"
         type: "SELECT"
@@ -127,3 +243,63 @@ form-configurations:
         validation:
           minValue: 1
           maxValue: 2048
+
+  # OpenAI Embedding模型配置
+  - provider: "openai"
+    type: "embedding"
+    fields:
+      - name: "providerName"
+        label: "提供商名称"
+        type: "TEXT"
+        required: true
+        defaultValue: "openai"
+        validation:
+          allowedValues: ["openai"]
+
+      - name: "modelId"
+        label: "模型ID"
+        type: "TEXT"
+        required: true
+        validation:
+          pattern: "^[a-zA-Z0-9_-]+$"
+          minLength: 1
+          maxLength: 64
+
+      - name: "modelName"
+        label: "模型名称"
+        type: "SELECT"
+        required: true
+        defaultValue: "text-embedding-ada-002"
+        options: ["text-embedding-ada-002", "text-embedding-3-small", "text-embedding-3-large"]
+
+      - name: "url"
+        label: "服务地址"
+        type: "TEXT"
+        required: true
+        defaultValue: "https://api.openai.com"
+        validation:
+          pattern: "^https?://.+"
+
+      - name: "key"
+        label: "API密钥"
+        type: "PASSWORD"
+        required: true
+        validation:
+          pattern: "^sk-.+"
+          minLength: 20
+
+      - name: "embeddingFormat"
+        label: "Embedding格式"
+        type: "SELECT"
+        required: false
+        defaultValue: "float"
+        options: ["float", "base64"]
+
+      - name: "numPredict"
+        label: "预测数量"
+        type: "NUMBER"
+        required: false
+        defaultValue: 1536
+        validation:
+          minValue: 1
+          maxValue: 4096
