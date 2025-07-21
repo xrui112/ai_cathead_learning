@@ -1,4 +1,4 @@
-package cn.cathead.ai.api.dto;
+package cn.cathead.ai.types.dto;
 
 import lombok.Data;
 import lombok.experimental.SuperBuilder;

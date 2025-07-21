@@ -25,7 +25,7 @@ public class ModelConfig {
     private String embeddingFormat;
     private Integer numPredict;
 
-    // 新增：乐观锁版本字段
+    // 乐观锁版本字段
     private Long version;
 
 }

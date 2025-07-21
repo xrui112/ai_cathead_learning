@@ -1,24 +1,19 @@
 package cn.cathead.ai.domain.model.service.DynamicForm.DynamicFormImpl;
 
-import cn.cathead.ai.api.dto.ChatModelDTO;
-import cn.cathead.ai.api.dto.EmbeddingModelDTO;
+
 import cn.cathead.ai.domain.model.service.DynamicForm.IDynamicForm;
 import cn.cathead.ai.domain.model.model.entity.FormConfiguration;
 import cn.cathead.ai.domain.model.model.entity.ValidationResult;
-import cn.cathead.ai.domain.model.model.entity.FieldDefinition;
-import cn.cathead.ai.domain.model.model.entity.FieldValidation;
-import cn.cathead.ai.domain.model.model.valobj.FieldType;
 import cn.cathead.ai.domain.model.service.DynamicForm.DynamicFormValidator.DynamicFormValidator;
 import cn.cathead.ai.domain.model.service.DynamicForm.FormConfigurationManager.FormConfigurationManager;
-import cn.cathead.ai.domain.model.service.IModelService;
+import cn.cathead.ai.domain.model.service.ModelCreation.IModelCreationService;
+import cn.cathead.ai.types.dto.ChatModelDTO;
+import cn.cathead.ai.types.dto.EmbeddingModelDTO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
-
 import java.util.Map;
-import java.util.UUID;
-import java.util.regex.Pattern;
 
 /**
  * 动态表单实现类
@@ -33,11 +28,11 @@ public class DynamicFormImpl implements IDynamicForm {
     @Autowired
     private DynamicFormValidator dynamicFormValidator;
 
-    private IModelService modelService;
+    private IModelCreationService modelCreationService;
 
     @Autowired
-    public DynamicFormImpl(IModelService modelService) {
-        this.modelService = modelService;
+    public DynamicFormImpl(IModelCreationService modelCreationService) {
+        this.modelCreationService = modelCreationService;
     }
 
     /**
@@ -84,12 +79,12 @@ public class DynamicFormImpl implements IDynamicForm {
             // 根据类型创建对应的模型
             if ("chat".equalsIgnoreCase(type)) {
                 ChatModelDTO chatModelDTO = buildChatModelDTO(provider, formData);
-                modelService.creatModel(chatModelDTO);
+                modelCreationService.createChatModel(chatModelDTO);
                 log.info("成功创建Chat模型，provider: {}, modelName: {}", provider, chatModelDTO.getModelName());
                 return "Chat模型创建成功";
             } else if ("embedding".equalsIgnoreCase(type)) {
                 EmbeddingModelDTO embeddingModelDTO = buildEmbeddingModelDTO(provider, formData);
-                modelService.creatModel(embeddingModelDTO);
+                modelCreationService.createEmbeddingModel(embeddingModelDTO);
                 log.info("成功创建Embedding模型，provider: {}, modelName: {}", provider, embeddingModelDTO.getModelName());
                 return "Embedding模型创建成功";
             } else {

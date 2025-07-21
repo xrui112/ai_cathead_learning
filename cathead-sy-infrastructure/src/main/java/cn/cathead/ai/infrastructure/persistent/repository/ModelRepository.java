@@ -21,8 +21,6 @@ import java.util.Arrays;
 @Slf4j
 public class ModelRepository implements IModelRepository {
 
-    @Resource
-    private RedissonClient redissonClient;
 
     @Resource
     private IModelDao iModelDao;

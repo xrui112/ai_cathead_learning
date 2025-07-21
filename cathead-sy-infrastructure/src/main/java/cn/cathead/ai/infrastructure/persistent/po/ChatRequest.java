@@ -7,7 +7,6 @@ public class ChatRequest {
 
     private String modelId;
 
-
     private String prompt;
 
 }

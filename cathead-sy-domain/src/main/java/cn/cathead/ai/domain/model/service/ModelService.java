@@ -1,7 +1,7 @@
 package cn.cathead.ai.domain.model.service;
-import cn.cathead.ai.api.dto.ChatModelDTO;
-import cn.cathead.ai.api.dto.ChatRequestDto;
-import cn.cathead.ai.api.dto.EmbeddingModelDTO;
+import cn.cathead.ai.types.dto.ChatModelDTO;
+import cn.cathead.ai.types.dto.ChatRequestDto;
+import cn.cathead.ai.types.dto.EmbeddingModelDTO;
 import cn.cathead.ai.domain.model.model.entity.ChatModelEntity;
 import cn.cathead.ai.domain.model.model.entity.ChatRequestEntity;
 import cn.cathead.ai.domain.model.model.entity.EmbeddingModelEntity;
@@ -11,6 +11,7 @@ import cn.cathead.ai.domain.model.model.entity.ValidationResult;
 import cn.cathead.ai.domain.model.repository.IModelRepository;
 import cn.cathead.ai.domain.model.service.DynamicForm.IDynamicForm;
 import cn.cathead.ai.domain.model.service.ModelBean.IModelBeanManager;
+import cn.cathead.ai.domain.model.service.ModelCreation.IModelCreationService;
 import cn.cathead.ai.domain.model.service.provider.IModelProvider;
 import cn.cathead.ai.types.exception.OptimisticLockException;
 import jakarta.annotation.Resource;
@@ -44,75 +45,19 @@ public class ModelService implements IModelService {
     // 动态表单服务
     @Resource
     private IDynamicForm dynamicForm;
+    
+    // 模型创建服务
+    @Resource
+    private IModelCreationService modelCreationService;
 
     @Override
     public void creatModel(ChatModelDTO chatModelDTO) {
-        ChatModelEntity chatModelEntity = ChatModelEntity.builder()
-                .modelId(UUID.randomUUID().toString())
-                .providerName(chatModelDTO.getProviderName())
-                .modelName(chatModelDTO.getModelName())
-                .url(chatModelDTO.getUrl())
-                .key(chatModelDTO.getKey())
-                .type(chatModelDTO.getType())
-                .temperature(chatModelDTO.getTemperature())
-                .topP(chatModelDTO.getTopP())
-                .maxTokens(chatModelDTO.getMaxTokens())
-                .presencePenalty(chatModelDTO.getPresencePenalty())
-                .frequencyPenalty(chatModelDTO.getFrequencyPenalty())
-                .stop(chatModelDTO.getStop())
-                .build();
-
-        // 1. 创建模型实例
-        ChatModel chatModel = modelBeanManager.createChatModelInstance(chatModelEntity);
-
-        if (chatModel == null) {
-            log.error("创建Chat模型实例失败: {}", chatModelEntity.getModelName());
-            return;
-        }
-
-        // 2. 存储到数据库（获得version） 初始version是0
-        long version=iModelRepository.saveModelRecord(chatModelEntity);
-        // 设置版本号到实体对象中
-        chatModelEntity.setVersion(version);
-        log.info("Chat模型存储到数据库成功，模型ID: {}, 版本: {}", 
-                chatModelEntity.getModelId(), chatModelEntity.getVersion());
-
-        // 3. 存入缓存
-        modelBeanManager.saveChatModelToCache(chatModel, chatModelEntity);
-        log.info("Chat模型创建成功: {}", chatModelEntity.getModelName());
+        modelCreationService.createChatModel(chatModelDTO);
     }
 
     @Override
     public void creatModel(EmbeddingModelDTO embeddingModelDTO) {
-        EmbeddingModelEntity embeddingModelEntity = EmbeddingModelEntity.builder()
-                .modelId(UUID.randomUUID().toString())
-                .providerName(embeddingModelDTO.getProviderName())
-                .modelName(embeddingModelDTO.getModelName())
-                .url(embeddingModelDTO.getUrl())
-                .key(embeddingModelDTO.getKey())
-                .type(embeddingModelDTO.getType())
-                .embeddingFormat(embeddingModelDTO.getEmbeddingFormat())
-                .numPredict(embeddingModelDTO.getNumPredict())
-                .build();
-
-        // 1. 创建模型实例
-        EmbeddingModel embeddingModel = modelBeanManager.createEmbeddingModelInstance(embeddingModelEntity);
-
-        if (embeddingModel == null) {
-            log.error("创建Embedding模型实例失败: {}", embeddingModelEntity.getModelName());
-            return;
-        }
-
-        // 2. 存储到数据库（获得version）
-        long version = iModelRepository.saveModelRecord(embeddingModelEntity);
-        // 设置版本号到实体对象中
-        embeddingModelEntity.setVersion(version);
-        log.info("Embedding模型存储到数据库成功，模型ID: {}, 版本: {}", 
-                embeddingModelEntity.getModelId(), embeddingModelEntity.getVersion());
-
-        // 3. 存入缓存
-        modelBeanManager.saveEmbeddingModelToCache(embeddingModel, embeddingModelEntity);
-        log.info("Embedding模型创建成功: {}", embeddingModelEntity.getModelName());
+        modelCreationService.createEmbeddingModel(embeddingModelDTO);
     }
 
     /**
@@ -373,7 +318,6 @@ public class ModelService implements IModelService {
         }
     }
 
-    
     @Override
     public FormConfiguration getFormConfiguration(String provider, String type) {
         log.info("获取动态表单配置，provider: {}, type: {}", provider, type);

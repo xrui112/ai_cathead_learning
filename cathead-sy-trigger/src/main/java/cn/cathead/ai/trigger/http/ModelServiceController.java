@@ -1,14 +1,16 @@
 package cn.cathead.ai.trigger.http;
 
-import cn.cathead.ai.api.dto.ChatModelDTO;
-import cn.cathead.ai.api.dto.ChatRequestDto;
-import cn.cathead.ai.api.dto.EmbeddingModelDTO;
+
 import cn.cathead.ai.domain.model.model.entity.BaseModelEntity;
 import cn.cathead.ai.domain.model.model.entity.FormConfiguration;
 import cn.cathead.ai.domain.model.model.entity.ValidationResult;
 import cn.cathead.ai.domain.model.service.ModelBean.IModelBeanManager;
 import cn.cathead.ai.domain.model.service.IModelService;
+import cn.cathead.ai.types.dto.ChatModelDTO;
+import cn.cathead.ai.types.dto.EmbeddingModelDTO;
+import cn.cathead.ai.types.dto.ChatRequestDto;
 import cn.cathead.ai.types.model.Response;
+import cn.cathead.ai.types.enums.ResponseCode;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
@@ -60,10 +62,10 @@ public class ModelServiceController {
         try {
             log.info("收到更新Chat模型配置请求，模型ID: {}", modelId);
             modelService.updateChatModelConfig(modelId, chatModelDTO);
-            return new Response<>("0000", "Chat模型配置更新成功", null);
+            return new Response<>(ResponseCode.SUCCESS_UPDATE_CHAT.getCode(), ResponseCode.SUCCESS_UPDATE_CHAT.getInfo(), null);
         } catch (Exception e) {
             log.error("更新Chat模型配置失败，模型ID: {}, 错误: {}", modelId, e.getMessage(), e);
-            return new Response<>("0001", "更新Chat模型配置失败: " + e.getMessage(), null);
+            return new Response<>(ResponseCode.FAILED_UPDATE_CHAT.getCode(), ResponseCode.FAILED_UPDATE_CHAT.getInfo() + ": " + e.getMessage(), null);
         }
     }
 
@@ -79,10 +81,10 @@ public class ModelServiceController {
         try {
             log.info("收到更新Embedding模型配置请求，模型ID: {}", modelId);
             modelService.updateEmbeddingModelConfig(modelId, embeddingModelDTO);
-            return new Response<>("0000", "Embedding模型配置更新成功", null);
+            return new Response<>(ResponseCode.SUCCESS_UPDATE_EMBEDDING.getCode(), ResponseCode.SUCCESS_UPDATE_EMBEDDING.getInfo(), null);
         } catch (Exception e) {
             log.error("更新Embedding模型配置失败，模型ID: {}, 错误: {}", modelId, e.getMessage(), e);
-            return new Response<>("0001", "更新Embedding模型配置失败: " + e.getMessage(), null);
+            return new Response<>(ResponseCode.FAILED_UPDATE_EMBEDDING.getCode(), ResponseCode.FAILED_UPDATE_EMBEDDING.getInfo() + ": " + e.getMessage(), null);
         }
     }
 
@@ -96,10 +98,10 @@ public class ModelServiceController {
         try {
             log.info("收到删除模型请求，模型ID: {}", modelId);
             modelService.deleteModel(modelId);
-            return new Response<>("0000", "模型删除成功", null);
+            return new Response<>(ResponseCode.SUCCESS_DELETE.getCode(), ResponseCode.SUCCESS_DELETE.getInfo(), null);
         } catch (Exception e) {
             log.error("删除模型失败，模型ID: {}, 错误: {}", modelId, e.getMessage(), e);
-            return new Response<>("0001", "删除模型失败: " + e.getMessage(), null);
+            return new Response<>(ResponseCode.FAILED_DELETE.getCode(), ResponseCode.FAILED_DELETE.getInfo() + ": " + e.getMessage(), null);
         }
     }
 
@@ -114,13 +116,13 @@ public class ModelServiceController {
             log.info("收到获取模型信息请求，模型ID: {}", modelId);
             BaseModelEntity modelEntity = modelService.getModelById(modelId);
             if (modelEntity != null) {
-                return new Response<>("0000", "获取模型信息成功", modelEntity);
+                return new Response<>(ResponseCode.SUCCESS_GET_MODEL.getCode(), ResponseCode.SUCCESS_GET_MODEL.getInfo(), modelEntity);
             } else {
-                return new Response<>("0001", "模型不存在", null);
+                return new Response<>(ResponseCode.MODEL_NOT_FOUND.getCode(), ResponseCode.MODEL_NOT_FOUND.getInfo(), null);
             }
         } catch (Exception e) {
             log.error("获取模型信息失败，模型ID: {}, 错误: {}", modelId, e.getMessage(), e);
-            return new Response<>("0001", "获取模型信息失败: " + e.getMessage(), null);
+            return new Response<>(ResponseCode.FAILED_GET_MODEL.getCode(), ResponseCode.FAILED_GET_MODEL.getInfo() + ": " + e.getMessage(), null);
         }
     }
 
@@ -134,10 +136,10 @@ public class ModelServiceController {
         try {
             log.info("收到刷新模型缓存请求，模型ID: {}", modelId);
             modelService.refreshModelCache(modelId);
-            return new Response<>("0000", "模型缓存刷新成功", null);
+            return new Response<>(ResponseCode.SUCCESS_REFRESH_CACHE.getCode(), ResponseCode.SUCCESS_REFRESH_CACHE.getInfo(), null);
         } catch (Exception e) {
             log.error("刷新模型缓存失败，模型ID: {}, 错误: {}", modelId, e.getMessage(), e);
-            return new Response<>("0001", "刷新模型缓存失败: " + e.getMessage(), null);
+            return new Response<>(ResponseCode.FAILED_REFRESH_CACHE.getCode(), ResponseCode.FAILED_REFRESH_CACHE.getInfo() + ": " + e.getMessage(), null);
         }
     }
 
@@ -151,10 +153,10 @@ public class ModelServiceController {
             log.info("收到批量刷新所有模型缓存请求");
             // todo 里可以实现批量刷新的逻辑
             // 暂时返回成功，具体实现可以根据需要添加
-            return new Response<>("0000", "批量刷新模型缓存成功", null);
+            return new Response<>(ResponseCode.SUCCESS_REFRESH_ALL_CACHE.getCode(), ResponseCode.SUCCESS_REFRESH_ALL_CACHE.getInfo(), null);
         } catch (Exception e) {
             log.error("批量刷新模型缓存失败，错误: {}", e.getMessage(), e);
-            return new Response<>("0001", "批量刷新模型缓存失败: " + e.getMessage(), null);
+            return new Response<>(ResponseCode.FAILED_REFRESH_ALL_CACHE.getCode(), ResponseCode.FAILED_REFRESH_ALL_CACHE.getInfo() + ": " + e.getMessage(), null);
         }
     }
 
@@ -170,10 +172,10 @@ public class ModelServiceController {
             stats.put(" chatModelCache", modelBeanManager.getAllChatModelCache().size());
             stats.put("embeddingModelCache", modelBeanManager.getAllEmbeddingModelCache().size());
             
-            return new Response<>("0000", "获取Bean管理统计信息成功", stats);
+            return new Response<>(ResponseCode.SUCCESS_GET_BEAN_STATS.getCode(), ResponseCode.SUCCESS_GET_BEAN_STATS.getInfo(), stats);
         } catch (Exception e) {
             log.error("获取Bean管理统计信息失败，错误: {}", e.getMessage(), e);
-            return new Response<>("0001", "获取Bean管理统计信息失败: " + e.getMessage(), null);
+            return new Response<>(ResponseCode.FAILED_GET_BEAN_STATS.getCode(), ResponseCode.FAILED_GET_BEAN_STATS.getInfo() + ": " + e.getMessage(), null);
         }
     }
 
@@ -186,10 +188,10 @@ public class ModelServiceController {
         try {
             log.info("收到清空所有模型Bean请求");
             modelBeanManager.clearAllModelBeans();
-            return new Response<>("0000", "清空所有模型Bean成功", null);
+            return new Response<>(ResponseCode.SUCCESS_CLEAR_BEANS.getCode(), ResponseCode.SUCCESS_CLEAR_BEANS.getInfo(), null);
         } catch (Exception e) {
             log.error("清空所有模型Bean失败，错误: {}", e.getMessage(), e);
-            return new Response<>("0001", "清空所有模型Bean失败: " + e.getMessage(), null);
+            return new Response<>(ResponseCode.FAILED_CLEAR_BEANS.getCode(), ResponseCode.FAILED_CLEAR_BEANS.getInfo() + ": " + e.getMessage(), null);
         }
     }
 
@@ -209,14 +211,14 @@ public class ModelServiceController {
             log.info("收到获取动态表单配置请求，provider: {}, type: {}", provider, type);
             FormConfiguration config = modelService.getFormConfiguration(provider, type);
             if (config != null) {
-                return new Response<>("00004", "获取表单配置成功", config);
+                return new Response<>(ResponseCode.SUCCESS_GET_FORM_CONFIG.getCode(), ResponseCode.SUCCESS_GET_FORM_CONFIG.getInfo(), config);
             } else {
-                return new Response<>("0005", "不支持的提供商或类型: " + provider + ":" + type, null);
+                return new Response<>(ResponseCode.UNSUPPORTED_PROVIDER_TYPE.getCode(), ResponseCode.UNSUPPORTED_PROVIDER_TYPE.getInfo() + ": " + provider + ":" + type, null);
             }
         } catch (Exception e) {
             log.error("获取动态表单配置失败，provider: {}, type: {}, 错误: {}", 
                     provider, type, e.getMessage(), e);
-            return new Response<>("0006", "获取表单配置失败: " + e.getMessage(), null);
+            return new Response<>(ResponseCode.FAILED_GET_FORM_CONFIG.getCode(), ResponseCode.FAILED_GET_FORM_CONFIG.getInfo() + ": " + e.getMessage(), null);
         }
     }
     
@@ -236,14 +238,14 @@ public class ModelServiceController {
             log.info("收到校验动态表单数据请求，provider: {}, type: {}", provider, type);
             ValidationResult result = modelService.validateFormData(provider, type, formData);
             if (result.isValid()) {
-                return new Response<>("0007", "表单数据校验通过", result);
+                return new Response<>(ResponseCode.SUCCESS_VALIDATE_FORM.getCode(), ResponseCode.SUCCESS_VALIDATE_FORM.getInfo(), result);
             } else {
-                return new Response<>("0008", "表单数据校验失败", result);
+                return new Response<>(ResponseCode.FAILED_VALIDATE_FORM.getCode(), ResponseCode.FAILED_VALIDATE_FORM.getInfo(), result);
             }
         } catch (Exception e) {
             log.error("校验动态表单数据失败，provider: {}, type: {}, 错误: {}", 
                     provider, type, e.getMessage(), e);
-            return new Response<>("0008", "表单数据校验失败: " + e.getMessage(), null);
+            return new Response<>(ResponseCode.FAILED_VALIDATE_FORM.getCode(), ResponseCode.FAILED_VALIDATE_FORM.getInfo() + ": " + e.getMessage(), null);
         }
     }
     
@@ -263,11 +265,11 @@ public class ModelServiceController {
         try {
             log.info("收到提交动态表单请求，provider: {}, type: {}", provider, type);
             String result = modelService.submitForm(provider, type, formData);
-            return new Response<>("0009", result, null);
+            return new Response<>(ResponseCode.SUCCESS_SUBMIT_FORM.getCode(), result, null);
         } catch (Exception e) {
             log.error("提交动态表单失败，provider: {}, type: {}, 错误: {}", 
                     provider, type, e.getMessage(), e);
-            return new Response<>("0010", "提交表单失败: " + e.getMessage(), null);
+            return new Response<>(ResponseCode.FAILED_SUBMIT_FORM.getCode(), ResponseCode.FAILED_SUBMIT_FORM.getInfo() + ": " + e.getMessage(), null);
         }
     }
 }
