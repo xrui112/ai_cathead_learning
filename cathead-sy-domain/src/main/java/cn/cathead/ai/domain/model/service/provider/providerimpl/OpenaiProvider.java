@@ -1,4 +1,4 @@
-package cn.cathead.ai.domain.model.service.provider.providerImpl;
+package cn.cathead.ai.domain.model.service.provider.providerimpl;
 
 import cn.cathead.ai.domain.model.model.entity.ChatModelEntity;
 import cn.cathead.ai.domain.model.model.entity.EmbeddingModelEntity;

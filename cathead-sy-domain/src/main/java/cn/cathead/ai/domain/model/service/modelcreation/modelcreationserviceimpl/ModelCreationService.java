@@ -1,10 +1,10 @@
-package cn.cathead.ai.domain.model.service.ModelCreation.ModelCreationServiceImpl;
+package cn.cathead.ai.domain.model.service.modelcreation.modelcreationserviceimpl;
 
 import cn.cathead.ai.domain.model.model.entity.ChatModelEntity;
 import cn.cathead.ai.domain.model.model.entity.EmbeddingModelEntity;
 import cn.cathead.ai.domain.model.repository.IModelRepository;
-import cn.cathead.ai.domain.model.service.ModelBean.IModelBeanManager;
-import cn.cathead.ai.domain.model.service.ModelCreation.IModelCreationService;
+import cn.cathead.ai.domain.model.service.modelbean.IModelBeanManager;
+import cn.cathead.ai.domain.model.service.modelcreation.IModelCreationService;
 import cn.cathead.ai.types.dto.ChatModelDTO;
 import cn.cathead.ai.types.dto.EmbeddingModelDTO;
 import jakarta.annotation.Resource;

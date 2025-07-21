@@ -1,10 +1,10 @@
-package cn.cathead.ai.domain.model.service.ModelBean.ModelBeanManagerImpl;
+package cn.cathead.ai.domain.model.service.modelbean.modelbeanmanagerimpl;
 
 import cn.cathead.ai.domain.model.model.entity.ChatModelEntity;
 import cn.cathead.ai.domain.model.model.entity.EmbeddingModelEntity;
 import cn.cathead.ai.domain.model.model.entity.ModelWrapper;
 import cn.cathead.ai.domain.model.repository.IModelRepository;
-import cn.cathead.ai.domain.model.service.ModelBean.IModelBeanManager;
+import cn.cathead.ai.domain.model.service.modelbean.IModelBeanManager;
 import cn.cathead.ai.domain.model.service.provider.IModelProvider;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheStats;

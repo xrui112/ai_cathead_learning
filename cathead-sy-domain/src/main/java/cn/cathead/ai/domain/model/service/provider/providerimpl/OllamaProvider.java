@@ -1,4 +1,4 @@
-package cn.cathead.ai.domain.model.service.provider.providerImpl;
+package cn.cathead.ai.domain.model.service.provider.providerimpl;
 
 import cn.cathead.ai.domain.model.model.entity.ChatModelEntity;
 import cn.cathead.ai.domain.model.model.entity.EmbeddingModelEntity;
@@ -28,7 +28,7 @@ public class OllamaProvider implements IModelProvider {
     public OllamaChatModel createChat(ChatModelEntity chatModelEntity) {
         OllamaApi ollamaApi = new OllamaApi.Builder()
                 .baseUrl(chatModelEntity.getUrl())
-                .build(); // Ollama 不需要 key
+                .build();
 
         return new OllamaChatModel(
                 ollamaApi,

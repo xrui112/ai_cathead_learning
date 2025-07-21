@@ -4,11 +4,11 @@ package cn.cathead.ai.trigger.http;
 import cn.cathead.ai.domain.model.model.entity.BaseModelEntity;
 import cn.cathead.ai.domain.model.model.entity.FormConfiguration;
 import cn.cathead.ai.domain.model.model.entity.ValidationResult;
-import cn.cathead.ai.domain.model.service.ModelBean.IModelBeanManager;
+import cn.cathead.ai.domain.model.service.modelbean.IModelBeanManager;
 import cn.cathead.ai.domain.model.service.IModelService;
 import cn.cathead.ai.types.dto.ChatModelDTO;
 import cn.cathead.ai.types.dto.EmbeddingModelDTO;
-import cn.cathead.ai.types.dto.ChatRequestDto;
+import cn.cathead.ai.types.dto.ChatRequestDTO;
 import cn.cathead.ai.types.model.Response;
 import cn.cathead.ai.types.enums.ResponseCode;
 import jakarta.annotation.Resource;
@@ -35,18 +35,18 @@ public class ModelServiceController {
     @Resource
     private IModelBeanManager modelBeanManager;
 
-    @RequestMapping(value = "model/creat/chat",method = RequestMethod.POST)
-    public void creatChat(@RequestParam ChatModelDTO chatModelDto) {
-        modelService.creatModel(chatModelDto);
+    @RequestMapping(value = "model/create/chat",method = RequestMethod.POST)
+    public void createChat(@RequestParam ChatModelDTO chatModelDto) {
+        modelService.createModel(chatModelDto);
     }
 
-    @RequestMapping(value = "model/creat/embedding",method = RequestMethod.POST)
-    public void creatEmbedding(@RequestParam EmbeddingModelDTO embeddingModelDTO) {
-        modelService.creatModel(embeddingModelDTO);
+    @RequestMapping(value = "model/create/embedding",method = RequestMethod.POST)
+    public void createEmbedding(@RequestParam EmbeddingModelDTO embeddingModelDTO) {
+        modelService.createModel(embeddingModelDTO);
     }
 
     @RequestMapping(value = "model/chat_with",method = RequestMethod.GET)
-    public Flux<org.springframework.ai.chat.model.ChatResponse> chatWith(@RequestParam ChatRequestDto chatRequestDto) {
+    public Flux<org.springframework.ai.chat.model.ChatResponse> chatWith(@RequestParam ChatRequestDTO chatRequestDto) {
         return modelService.chatWith(chatRequestDto);
     }
 

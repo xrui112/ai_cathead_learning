@@ -5,7 +5,7 @@ import cn.cathead.ai.domain.model.model.entity.BaseModelEntity;
 import cn.cathead.ai.domain.model.model.entity.FormConfiguration;
 import cn.cathead.ai.domain.model.model.entity.ValidationResult;
 import cn.cathead.ai.types.dto.ChatModelDTO;
-import cn.cathead.ai.types.dto.ChatRequestDto;
+import cn.cathead.ai.types.dto.ChatRequestDTO;
 import cn.cathead.ai.types.dto.EmbeddingModelDTO;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
@@ -16,11 +16,11 @@ import java.util.Map;
 
 public interface IModelService {
 
-    public void creatModel(ChatModelDTO chatModelDTO);
+    public void createModel(ChatModelDTO chatModelDTO);
 
-    public void creatModel(EmbeddingModelDTO embeddingModelDTO);
+    public void createModel(EmbeddingModelDTO embeddingModelDTO);
 
-    public Flux<ChatResponse> chatWith(ChatRequestDto chatRequestDto);
+    public Flux<ChatResponse> chatWith(ChatRequestDTO chatRequestDto);
 
     public void updateChatModelConfig(String modelId, ChatModelDTO chatModelDTO);
 

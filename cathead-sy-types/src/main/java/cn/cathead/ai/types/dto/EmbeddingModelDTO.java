@@ -9,6 +9,5 @@ import lombok.experimental.SuperBuilder;
 @EqualsAndHashCode(callSuper = true)
 public class EmbeddingModelDTO extends BaseModelDTO {
     private String embeddingFormat;
-
     private Integer numPredict;
 }

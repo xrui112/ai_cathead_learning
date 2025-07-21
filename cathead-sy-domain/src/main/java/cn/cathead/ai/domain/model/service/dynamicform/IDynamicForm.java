@@ -1,4 +1,4 @@
-package cn.cathead.ai.domain.model.service.DynamicForm;
+package cn.cathead.ai.domain.model.service.dynamicform;
 
 import cn.cathead.ai.domain.model.model.entity.FormConfiguration;
 import cn.cathead.ai.domain.model.model.entity.ValidationResult;

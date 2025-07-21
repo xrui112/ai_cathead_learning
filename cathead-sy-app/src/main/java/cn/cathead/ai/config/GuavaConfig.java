@@ -14,14 +14,14 @@ import java.util.concurrent.TimeUnit;
 @Configuration
 public class GuavaConfig {
     @Bean(name = "chatModelCache")
-    public Cache<String, ModelWrapper<ChatModel>> ChatmodelCache() {
+    public Cache<String, ModelWrapper<ChatModel>> chatmodelCache() {
         return CacheBuilder.newBuilder()
                 .maximumSize(50)
                 .build();
     }
 
     @Bean(name = "embeddingModelCache")
-    public Cache<String, ModelWrapper<EmbeddingModel>> EmbeddingModelCache() {
+    public Cache<String, ModelWrapper<EmbeddingModel>> embeddingModelCache() {
         return CacheBuilder.newBuilder()
                 .maximumSize(50)
                 .build();

@@ -1,12 +1,12 @@
-package cn.cathead.ai.domain.model.service.DynamicForm.DynamicFormImpl;
+package cn.cathead.ai.domain.model.service.dynamicform.dynamicformimpl;
 
 
-import cn.cathead.ai.domain.model.service.DynamicForm.IDynamicForm;
+import cn.cathead.ai.domain.model.service.dynamicform.IDynamicForm;
 import cn.cathead.ai.domain.model.model.entity.FormConfiguration;
 import cn.cathead.ai.domain.model.model.entity.ValidationResult;
-import cn.cathead.ai.domain.model.service.DynamicForm.DynamicFormValidator.DynamicFormValidator;
-import cn.cathead.ai.domain.model.service.DynamicForm.FormConfigurationManager.FormConfigurationManager;
-import cn.cathead.ai.domain.model.service.ModelCreation.IModelCreationService;
+import cn.cathead.ai.domain.model.service.dynamicform.dynamicformvalidator.DynamicFormValidator;
+import cn.cathead.ai.domain.model.service.dynamicform.formconfigurationmanager.FormConfigurationManager;
+import cn.cathead.ai.domain.model.service.modelcreation.IModelCreationService;
 import cn.cathead.ai.types.dto.ChatModelDTO;
 import cn.cathead.ai.types.dto.EmbeddingModelDTO;
 import lombok.extern.slf4j.Slf4j;

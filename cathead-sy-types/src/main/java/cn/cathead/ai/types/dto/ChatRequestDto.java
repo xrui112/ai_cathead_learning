@@ -5,10 +5,10 @@ import lombok.Data;
 import java.io.Serializable;
 
 @Data
-public class ChatRequestDto implements Serializable {
+public class ChatRequestDTO implements Serializable {
 
     private String modelId;
 
     private String prompt;
 
-}
+} 

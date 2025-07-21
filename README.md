@@ -54,7 +54,7 @@ Model领域作为系统核心，负责管理不同AI模型供应商的统一接�
 
 ##### 🔧 ModelBean子领域
 ```java
-cn.cathead.ai.domain.model.service.ModelBean/
+cn.cathead.ai.domain.model.service.modelbean/
 ├── IModelBeanManager.java          # ModelBean管理接口
 └── ModelBeanImpl/
     └── ModelBeanManager.java       # ModelBean生命周期管理

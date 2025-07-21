@@ -1,4 +1,4 @@
-package cn.cathead.ai.domain.model.service.ModelCreation;
+package cn.cathead.ai.domain.model.service.modelcreation;
 
 import cn.cathead.ai.types.dto.ChatModelDTO;
 import cn.cathead.ai.types.dto.EmbeddingModelDTO;

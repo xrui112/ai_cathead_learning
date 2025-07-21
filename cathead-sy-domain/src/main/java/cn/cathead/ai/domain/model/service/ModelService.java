@@ -1,6 +1,6 @@
 package cn.cathead.ai.domain.model.service;
 import cn.cathead.ai.types.dto.ChatModelDTO;
-import cn.cathead.ai.types.dto.ChatRequestDto;
+import cn.cathead.ai.types.dto.ChatRequestDTO;
 import cn.cathead.ai.types.dto.EmbeddingModelDTO;
 import cn.cathead.ai.domain.model.model.entity.ChatModelEntity;
 import cn.cathead.ai.domain.model.model.entity.ChatRequestEntity;
@@ -9,9 +9,9 @@ import cn.cathead.ai.domain.model.model.entity.BaseModelEntity;
 import cn.cathead.ai.domain.model.model.entity.FormConfiguration;
 import cn.cathead.ai.domain.model.model.entity.ValidationResult;
 import cn.cathead.ai.domain.model.repository.IModelRepository;
-import cn.cathead.ai.domain.model.service.DynamicForm.IDynamicForm;
-import cn.cathead.ai.domain.model.service.ModelBean.IModelBeanManager;
-import cn.cathead.ai.domain.model.service.ModelCreation.IModelCreationService;
+import cn.cathead.ai.domain.model.service.dynamicform.IDynamicForm;
+import cn.cathead.ai.domain.model.service.modelbean.IModelBeanManager;
+import cn.cathead.ai.domain.model.service.modelcreation.IModelCreationService;
 import cn.cathead.ai.domain.model.service.provider.IModelProvider;
 import cn.cathead.ai.types.exception.OptimisticLockException;
 import jakarta.annotation.Resource;
@@ -24,7 +24,6 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 
@@ -51,12 +50,12 @@ public class ModelService implements IModelService {
     private IModelCreationService modelCreationService;
 
     @Override
-    public void creatModel(ChatModelDTO chatModelDTO) {
+    public void createModel(ChatModelDTO chatModelDTO) {
         modelCreationService.createChatModel(chatModelDTO);
     }
 
     @Override
-    public void creatModel(EmbeddingModelDTO embeddingModelDTO) {
+    public void createModel(EmbeddingModelDTO embeddingModelDTO) {
         modelCreationService.createEmbeddingModel(embeddingModelDTO);
     }
 
@@ -69,7 +68,7 @@ public class ModelService implements IModelService {
      *
      */
     @Override
-    public Flux<ChatResponse> chatWith(ChatRequestDto chatRequestDto) {
+    public Flux<ChatResponse> chatWith(ChatRequestDTO chatRequestDto) {
         ChatRequestEntity chatRequestEntity = ChatRequestEntity.builder()
                 .modelId(chatRequestDto.getModelId())
                 .prompt(chatRequestDto.getPrompt())

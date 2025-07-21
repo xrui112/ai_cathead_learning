@@ -12,7 +12,6 @@ import cn.cathead.ai.types.exception.OptimisticLockException;
 import com.fasterxml.jackson.databind.ser.Serializers;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
-import org.redisson.api.RedissonClient;
 import org.springframework.stereotype.Repository;
 
 import java.util.Arrays;

@@ -1,4 +1,4 @@
-package cn.cathead.ai.domain.model.service.DynamicForm.FormConfigurationManager;
+package cn.cathead.ai.domain.model.service.dynamicform.formconfigurationmanager;
 
 import cn.cathead.ai.domain.model.model.entity.FieldDefinition;
 import cn.cathead.ai.domain.model.model.entity.FieldValidation;
@@ -31,9 +31,9 @@ public class FormConfigurationManager {
             log.info("开始加载动态表单配置...");
             
             // 从classpath加载YAML配置文件
-            ClassPathResource resource = new ClassPathResource("dynamicForm/dynamic-form.yml");
+            ClassPathResource resource = new ClassPathResource("dynamicform/dynamic-form.yml");
             if (!resource.exists()) {
-                log.warn("动态表单配置文件不存在: dynamicForm/dynamic-form.yml");
+                log.warn("动态表单配置文件不存在: dynamicform/dynamic-form.yml");
                 return;
             }
             try (InputStream inputStream = resource.getInputStream()) {
