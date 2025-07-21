@@ -1,4 +1,4 @@
-# AI RAG CatHead Learning Platform
+# AI CatHead Learning Platform
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Java](https://img.shields.io/badge/Java-17-orange.svg)](https://openjdk.java.net/projects/jdk/17/)
@@ -22,7 +22,6 @@ ai-rag-catheadLearning/
 
 ├── cathead-sy-app/          # 应用服务层 - 用例编排  
 
-├── cathead-sy-api/          # 应用接口层 - 接口定义    
 
 ├── cathead-sy-domain/       # 领域核心层 - 业务逻辑  
 
@@ -41,7 +40,6 @@ ai-rag-catheadLearning/
 | **Application Layer** | 应用服务、用例编排 | `cathead-sy-app` |  
 | **Domain Layer** | 业务逻辑、领域模型 | `cathead-sy-domain` |
 | **Infrastructure Layer** | 数据持久化、外部集成 | `cathead-sy-infrastructure` |
-| **API Layer** | 接口定义、DTO | `cathead-sy-api` |
 | **Types Layer** | 通用类型、枚举 | `cathead-sy-types` |
 
 ## 🧩 领域模型设计
