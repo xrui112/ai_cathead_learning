@@ -1,0 +1,33 @@
+# 测试环境配置
+spring:
+  application:
+    name: cathead-ai-test
+  datasource:
+    # 使用H2内存数据库进行测试
+    url: jdbc:h2:mem:test_db;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: test
+    password: test
+  h2:
+    console:
+      enabled: true
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+    
+# 日志配置
+logging:
+  level:
+    cn.cathead: DEBUG
+    org.springframework.ai: DEBUG
+    
+# 缓存配置（测试用）
+cache:
+  model:
+    chat:
+      maximumSize: 10
+      expireAfterWrite: 1h
+    embedding:
+      maximumSize: 10
+      expireAfterWrite: 1h 
