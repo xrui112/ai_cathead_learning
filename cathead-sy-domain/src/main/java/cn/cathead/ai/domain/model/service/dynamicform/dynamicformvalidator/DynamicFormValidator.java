@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
 
@@ -31,9 +32,33 @@ public class DynamicFormValidator {
             result.addError("system", "表单数据不能为空");
             return result;
         }
+        
+        // 先应用默认值，再进行校验
+        Map<String, Object> formDataWithDefaults = applyDefaultValues(config, formData);
+        
         // 遍历所有字段定义进行校验
         for (FieldDefinition field : config.getFields()) {
-            validateField(field, formData, result);
+            validateField(field, formDataWithDefaults, result);
+        }
+        
+        return result;
+    }
+    
+    /**
+     * 应用YAML配置的默认值到表单数据
+     */
+    public Map<String, Object> applyDefaultValues(FormConfiguration config, Map<String, Object> formData) {
+        Map<String, Object> result = new HashMap<>(formData);
+        
+        for (FieldDefinition field : config.getFields()) {
+            String fieldName = field.getName();
+            Object currentValue = result.get(fieldName);
+            
+            // 如果当前值为空且字段有默认值，则应用默认值
+            if (isEmpty(currentValue) && field.getDefaultValue() != null) {
+                result.put(fieldName, field.getDefaultValue());
+                log.debug("应用YAML默认值: {} = {}", fieldName, field.getDefaultValue());
+            }
         }
         
         return result;
