@@ -88,7 +88,6 @@ public class DynamicFormImpl implements IDynamicForm {
             throw new RuntimeException("表单数据校验失败: " + validationResult.getAllErrors());
         }
 
-        
         try {
             // 根据类型创建对应的模型
             if ("chat".equalsIgnoreCase(type)) {
