@@ -13,6 +13,7 @@ import cn.cathead.ai.domain.model.service.dynamicform.IDynamicForm;
 import cn.cathead.ai.domain.model.service.modelbean.IModelBeanManager;
 import cn.cathead.ai.domain.model.service.modelcreation.IModelCreationService;
 import cn.cathead.ai.domain.model.service.provider.IModelProvider;
+import cn.cathead.ai.types.exception.AppException;
 import cn.cathead.ai.types.exception.OptimisticLockException;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -50,13 +51,13 @@ public class ModelService implements IModelService {
     private IModelCreationService modelCreationService;
 
     @Override
-    public void createModel(ChatModelDTO chatModelDTO) {
-        modelCreationService.createChatModel(chatModelDTO);
+    public String createModel(ChatModelDTO chatModelDTO) {
+        return modelCreationService.createChatModel(chatModelDTO);
     }
 
     @Override
-    public void createModel(EmbeddingModelDTO embeddingModelDTO) {
-        modelCreationService.createEmbeddingModel(embeddingModelDTO);
+    public String createModel(EmbeddingModelDTO embeddingModelDTO) {
+        return modelCreationService.createEmbeddingModel(embeddingModelDTO);
     }
 
     /**
@@ -292,7 +293,7 @@ public class ModelService implements IModelService {
         BaseModelEntity modelEntity = iModelRepository.queryModelById(modelId);
         if (modelEntity == null) {
             log.warn("模型不存在，无法刷新Bean，模型ID: {}", modelId);
-            return;
+            throw new AppException("模型不存在，无法刷新Bean，模型ID: {}", modelId);
         }
         
         // 2. 强制更新缓存，不进行版本检查

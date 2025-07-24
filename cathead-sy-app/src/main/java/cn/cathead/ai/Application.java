@@ -6,7 +6,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
 @Configurable
-@MapperScan("cn.cathead.ai.infrastructure.persistent.dao")
 public class Application {
 
     public static void main(String[] args) {

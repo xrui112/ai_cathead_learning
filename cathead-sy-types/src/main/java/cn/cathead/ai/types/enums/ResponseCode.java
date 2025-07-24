@@ -33,7 +33,9 @@ public enum ResponseCode {
     
     // 模型删除相关
     SUCCESS_DELETE("0000", "模型删除成功"),
-    FAILED_DELETE("0001", "删除模型失败"),
+
+    //不存在删除失败
+//    FAILED_DELETE("0001", "删除模型失败"),
     
     // 模型查询相关
     SUCCESS_GET_MODEL("0000", "获取模型信息成功"),

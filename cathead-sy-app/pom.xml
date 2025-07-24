@@ -87,6 +87,12 @@
                 <artifactId>mockito-junit-jupiter</artifactId>
                 <scope>test</scope>
             </dependency>
+            <!-- WebTestClient 支持 -->
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-webflux</artifactId>
+                <scope>test</scope>
+            </dependency>
         </dependencies>
 
     <build>

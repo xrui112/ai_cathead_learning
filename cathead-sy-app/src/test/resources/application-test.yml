@@ -2,6 +2,8 @@
 spring:
   application:
     name: cathead-ai-test
+  main:
+    allow-bean-definition-overriding: true  # 允许bean覆盖，让测试配置覆盖主配置
   datasource:
     # 使用H2内存数据库进行测试
     url: jdbc:h2:mem:test_db;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE

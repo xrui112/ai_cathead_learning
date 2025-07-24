@@ -19,7 +19,7 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 
 @Slf4j
-@Component("ollamaprovider")
+@Component("ollama")
 @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 public class OllamaProvider implements IModelProvider {
 

@@ -16,6 +16,7 @@ public class GuavaConfig {
     @Bean(name = "chatModelCache")
     public Cache<String, ModelWrapper<ChatModel>> chatmodelCache() {
         return CacheBuilder.newBuilder()
+                .recordStats()
                 .maximumSize(50)
                 .build();
     }
@@ -23,6 +24,7 @@ public class GuavaConfig {
     @Bean(name = "embeddingModelCache")
     public Cache<String, ModelWrapper<EmbeddingModel>> embeddingModelCache() {
         return CacheBuilder.newBuilder()
+                .recordStats()
                 .maximumSize(50)
                 .build();
     }

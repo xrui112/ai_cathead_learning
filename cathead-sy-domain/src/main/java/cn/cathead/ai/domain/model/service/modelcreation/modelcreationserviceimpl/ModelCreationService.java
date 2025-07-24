@@ -30,7 +30,7 @@ public class ModelCreationService implements IModelCreationService {
     private IModelBeanManager modelBeanManager;
 
     @Override
-    public void createChatModel(ChatModelDTO chatModelDTO) {
+    public String createChatModel(ChatModelDTO chatModelDTO) {
         ChatModelEntity chatModelEntity = ChatModelEntity.builder()
                 .modelId(UUID.randomUUID().toString())
                 .providerName(chatModelDTO.getProviderName())
@@ -51,7 +51,7 @@ public class ModelCreationService implements IModelCreationService {
 
         if (chatModel == null) {
             log.error("创建Chat模型实例失败: {}", chatModelEntity.getModelName());
-            return;
+            return null;
         }
 
         // 2. 存储到数据库（获得version） 初始version是0
@@ -63,11 +63,12 @@ public class ModelCreationService implements IModelCreationService {
 
         // 3. 存入缓存
         modelBeanManager.saveChatModelToCache(chatModel, chatModelEntity);
-        log.info("Chat模型创建成功: {}", chatModelEntity.getModelName());
+        log.info("Chat模型创建成功: {}", chatModelEntity.getModelId());
+        return chatModelEntity.getModelId();
     }
 
     @Override
-    public void createEmbeddingModel(EmbeddingModelDTO embeddingModelDTO) {
+    public String createEmbeddingModel(EmbeddingModelDTO embeddingModelDTO) {
         EmbeddingModelEntity embeddingModelEntity = EmbeddingModelEntity.builder()
                 .modelId(UUID.randomUUID().toString())
                 .providerName(embeddingModelDTO.getProviderName())
@@ -84,7 +85,7 @@ public class ModelCreationService implements IModelCreationService {
 
         if (embeddingModel == null) {
             log.error("创建Embedding模型实例失败: {}", embeddingModelEntity.getModelName());
-            return;
+            return null;
         }
 
         // 2. 存储到数据库（获得version）
@@ -96,6 +97,7 @@ public class ModelCreationService implements IModelCreationService {
 
         // 3. 存入缓存
         modelBeanManager.saveEmbeddingModelToCache(embeddingModel, embeddingModelEntity);
-        log.info("Embedding模型创建成功: {}", embeddingModelEntity.getModelName());
+        log.info("Embedding模型创建成功: {}", embeddingModelEntity.getModelId());
+        return embeddingModelEntity.getModelId();
     }
 } 

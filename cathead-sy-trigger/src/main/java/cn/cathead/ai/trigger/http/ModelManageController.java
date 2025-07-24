@@ -6,6 +6,7 @@ import cn.cathead.ai.domain.model.service.modelbean.IModelBeanManager;
 import cn.cathead.ai.domain.model.service.IModelService;
 import cn.cathead.ai.types.dto.ChatModelDTO;
 import cn.cathead.ai.types.dto.EmbeddingModelDTO;
+import cn.cathead.ai.types.exception.AppException;
 import cn.cathead.ai.types.model.Response;
 import cn.cathead.ai.types.enums.ResponseCode;
 import jakarta.annotation.Resource;
@@ -39,13 +40,46 @@ public class ModelManageController {
     private IModelBeanManager modelBeanManager;
 
     @RequestMapping(value = "create_chat",method = RequestMethod.POST)
-    public void createChat(@RequestParam ChatModelDTO chatModelDto) {
-        modelService.createModel(chatModelDto);
+    public Response<String> createChat(@RequestBody ChatModelDTO chatModelDto) {
+        try {
+            log.info("收到创建Chat模型请求: {}", chatModelDto);
+            String modelId = modelService.createModel(chatModelDto);
+            if (null==modelId){
+                throw new AppException("模型创建失败");
+            }
+            return Response.<String>builder()
+                    .code(ResponseCode.SUCCESS_CREATE.getCode())
+                    .info(ResponseCode.SUCCESS_CREATE.getInfo())
+                    .data(modelId)
+                    .build();
+        } catch (Exception e) {
+            log.error("创建Chat模型失败: {}", e.getMessage(), e);
+            return Response.<String>builder()
+                    .code(ResponseCode.FAILED_CREATE.getCode())
+                    .info(ResponseCode.FAILED_CREATE.getInfo() + ": " + e.getMessage())
+                    .data(null)
+                    .build();
+        }
     }
 
     @RequestMapping(value = "create_embedding",method = RequestMethod.POST)
-    public void createEmbedding(@RequestParam EmbeddingModelDTO embeddingModelDTO) {
-        modelService.createModel(embeddingModelDTO);
+    public Response<String> createEmbedding(@RequestBody EmbeddingModelDTO embeddingModelDTO) {
+        try {
+            log.info("收到创建Embedding模型请求: {}", embeddingModelDTO);
+            String modelId = modelService.createModel(embeddingModelDTO);
+            return Response.<String>builder()
+                    .code(ResponseCode.SUCCESS_CREATE.getCode())
+                    .info(ResponseCode.SUCCESS_CREATE.getInfo())
+                    .data(modelId)
+                    .build();
+        } catch (Exception e) {
+            log.error("创建Embedding模型失败: {}", e.getMessage(), e);
+            return Response.<String>builder()
+                    .code(ResponseCode.FAILED_CREATE.getCode())
+                    .info(ResponseCode.FAILED_CREATE.getInfo() + ": " + e.getMessage())
+                    .data(null)
+                    .build();
+        }
     }
 
 
@@ -91,6 +125,7 @@ public class ModelManageController {
      * 删除模型
      * @param modelId 模型ID
      * @return 操作结果
+     *删除操作不存在失败,只要调用,必执行完整的删除操作,及时数据不存在
      */
     @RequestMapping(value = "model/{modelId}",method = RequestMethod.DELETE)
     public Response<String> deleteModel(@PathVariable String modelId) {
@@ -100,7 +135,7 @@ public class ModelManageController {
             return new Response<>(ResponseCode.SUCCESS_DELETE.getCode(), ResponseCode.SUCCESS_DELETE.getInfo(), null);
         } catch (Exception e) {
             log.error("删除模型失败，模型ID: {}, 错误: {}", modelId, e.getMessage(), e);
-            return new Response<>(ResponseCode.FAILED_DELETE.getCode(), ResponseCode.FAILED_DELETE.getInfo() + ": " + e.getMessage(), null);
+            return new Response<>(ResponseCode.SUCCESS_DELETE.getCode(), ResponseCode.SUCCESS_DELETE.getInfo() + ": " + e.getMessage(), null);
         }
     }
 
@@ -168,7 +203,7 @@ public class ModelManageController {
         try {
             Map<String, Object> stats = new HashMap<>();
             stats.put("beanStats", modelBeanManager.getModelBeanStats());
-            stats.put(" chatModelCache", modelBeanManager.getAllChatModelCache().size());
+            stats.put("chatModelCache", modelBeanManager.getAllChatModelCache().size());
             stats.put("embeddingModelCache", modelBeanManager.getAllEmbeddingModelCache().size());
 
             return new Response<>(ResponseCode.SUCCESS_GET_BEAN_STATS.getCode(), ResponseCode.SUCCESS_GET_BEAN_STATS.getInfo(), stats);

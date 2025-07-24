@@ -23,7 +23,7 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 
 @Slf4j
-@Component("openaiprovider")
+@Component("openai")
 @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 public class OpenaiProvider implements IModelProvider {
     @Override

@@ -27,6 +27,11 @@ spring:
         speech: none
         transcription: none
       moderation: none
+
+
+mybatis:
+  mapper-locations: classpath*:mybatis/mapper/*.xml
+
 logging:
   level:
     root: info

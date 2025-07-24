@@ -12,14 +12,6 @@ form-configurations:
         validation:
           allowedValues: ["ollama"]
 
-      - name: "modelId"
-        label: "模型ID"
-        type: "TEXT"
-        required: true
-        validation:
-          pattern: "^[a-zA-Z0-9_-]+$"
-          minLength: 1
-          maxLength: 64
 
       - name: "modelName"
         label: "模型名称"
@@ -104,14 +96,6 @@ form-configurations:
         validation:
           allowedValues: ["openai"]
 
-      - name: "modelId"
-        label: "模型ID"
-        type: "TEXT"
-        required: true
-        validation:
-          pattern: "^[a-zA-Z0-9_-]+$"
-          minLength: 1
-          maxLength: 64
 
       - name: "modelName"
         label: "模型名称"
@@ -199,14 +183,6 @@ form-configurations:
         validation:
           allowedValues: ["ollama"]
 
-      - name: "modelId"
-        label: "模型ID"
-        type: "TEXT"
-        required: true
-        validation:
-          pattern: "^[a-zA-Z0-9_-]+$"
-          minLength: 1
-          maxLength: 64
 
       - name: "modelName"
         label: "模型名称"
@@ -255,15 +231,6 @@ form-configurations:
         defaultValue: "openai"
         validation:
           allowedValues: ["openai"]
-
-      - name: "modelId"
-        label: "模型ID"
-        type: "TEXT"
-        required: true
-        validation:
-          pattern: "^[a-zA-Z0-9_-]+$"
-          minLength: 1
-          maxLength: 64
 
       - name: "modelName"
         label: "模型名称"

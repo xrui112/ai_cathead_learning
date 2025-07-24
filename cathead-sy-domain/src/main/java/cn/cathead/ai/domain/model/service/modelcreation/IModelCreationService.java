@@ -13,11 +13,11 @@ public interface IModelCreationService {
      * 创建Chat模型
      * @param chatModelDTO Chat模型配置
      */
-    void createChatModel(ChatModelDTO chatModelDTO);
+    String createChatModel(ChatModelDTO chatModelDTO);
     
     /**
      * 创建Embedding模型
      * @param embeddingModelDTO Embedding模型配置
      */
-    void createEmbeddingModel(EmbeddingModelDTO embeddingModelDTO);
+    String createEmbeddingModel(EmbeddingModelDTO embeddingModelDTO);
 } 
