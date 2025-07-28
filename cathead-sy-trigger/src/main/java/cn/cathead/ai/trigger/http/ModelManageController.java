@@ -86,34 +86,37 @@ public class ModelManageController {
     /**
      * 更新Chat模型配置
      * @param modelId 模型ID
-     * @param chatModelDTO 新的模型配置
+     * @param provider 提供商
+     * @param formData 表单数据
      * @return 操作结果
      */
     @RequestMapping(value = "chat/{modelId}",method = RequestMethod.PUT)
     public Response<String> updateChatModelConfig(@PathVariable String modelId,
-                                                  @RequestBody ChatModelDTO chatModelDTO) {
+                                                  @RequestParam String provider,
+                                                  @RequestBody Map<String, Object> formData) {
         try {
-            log.info("收到更新Chat模型配置请求，模型ID: {}", modelId);
-            modelService.updateChatModelConfig(modelId, chatModelDTO);
+            log.info("收到更新Chat模型配置请求，模型ID: {}, provider: {}", modelId, provider);
+            modelService.updateChatModelConfigByFormData(modelId, provider, formData);
             return new Response<>(ResponseCode.SUCCESS_UPDATE_CHAT.getCode(), ResponseCode.SUCCESS_UPDATE_CHAT.getInfo(), null);
         } catch (Exception e) {
             log.error("更新Chat模型配置失败，模型ID: {}, 错误: {}", modelId, e.getMessage(), e);
             return new Response<>(ResponseCode.FAILED_UPDATE_CHAT.getCode(), ResponseCode.FAILED_UPDATE_CHAT.getInfo() + ": " + e.getMessage(), null);
         }
     }
-
     /**
      * 更新Embedding模型配置
      * @param modelId 模型ID
-     * @param embeddingModelDTO 新的模型配置
+     * @param provider 提供商
+     * @param formData 表单数据
      * @return 操作结果
      */
     @RequestMapping(value = "embedding/{modelId}", method = RequestMethod.PUT)
     public Response<String> updateEmbeddingModelConfig(@PathVariable String modelId,
-                                                       @RequestBody EmbeddingModelDTO embeddingModelDTO) {
+                                                       @RequestParam String provider,
+                                                       @RequestBody Map<String, Object> formData) {
         try {
-            log.info("收到更新Embedding模型配置请求，模型ID: {}", modelId);
-            modelService.updateEmbeddingModelConfig(modelId, embeddingModelDTO);
+            log.info("收到更新Embedding模型配置请求，模型ID: {}, provider: {}", modelId, provider);
+            modelService.updateEmbeddingModelConfigByFormData(modelId, provider, formData);
             return new Response<>(ResponseCode.SUCCESS_UPDATE_EMBEDDING.getCode(), ResponseCode.SUCCESS_UPDATE_EMBEDDING.getInfo(), null);
         } catch (Exception e) {
             log.error("更新Embedding模型配置失败，模型ID: {}, 错误: {}", modelId, e.getMessage(), e);

@@ -25,6 +25,22 @@ public interface IModelService {
     public void updateChatModelConfig(String modelId, ChatModelDTO chatModelDTO);
 
     public void updateEmbeddingModelConfig(String modelId, EmbeddingModelDTO embeddingModelDTO);
+    
+    /**
+     * 使用formData更新Chat模型配置
+     * @param modelId 模型ID
+     * @param provider 提供商
+     * @param formData 表单数据
+     */
+    public void updateChatModelConfigByFormData(String modelId, String provider, Map<String, Object> formData);
+    
+    /**
+     * 使用formData更新Embedding模型配置
+     * @param modelId 模型ID  
+     * @param provider 提供商
+     * @param formData 表单数据
+     */
+    public void updateEmbeddingModelConfigByFormData(String modelId, String provider, Map<String, Object> formData);
 
     public void deleteModel(String modelId);
 
