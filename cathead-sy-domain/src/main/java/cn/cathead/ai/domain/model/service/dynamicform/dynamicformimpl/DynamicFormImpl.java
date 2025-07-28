@@ -66,6 +66,7 @@ public class DynamicFormImpl implements IDynamicForm {
     }
 
     /**
+     * 动态添加的字段没有校验了 直接到submit
      * 提交表单并创建模型
      */
     @Override

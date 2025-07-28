@@ -257,6 +257,7 @@ public class ModelManageController {
     }
 
     /**
+     * 废置 校验逻辑在submit里编排
      * 校验动态表单数据
      * 用户提交表格时，先通过此接口走校验逻辑
      * @param provider 提供商
@@ -264,24 +265,24 @@ public class ModelManageController {
      * @param formData 表单数据
      * @return 校验结果
      */
-    @RequestMapping(value = "model_form/validate",method = RequestMethod.POST)
-    public Response<ValidationResult> validateFormData(@RequestParam String provider,
-                                                       @RequestParam String type,
-                                                       @RequestBody Map<String, Object> formData) {
-        try {
-            log.info("收到校验动态表单数据请求，provider: {}, type: {}", provider, type);
-            ValidationResult result = modelService.validateFormData(provider, type, formData);
-            if (result.isValid()) {
-                return new Response<>(ResponseCode.SUCCESS_VALIDATE_FORM.getCode(), ResponseCode.SUCCESS_VALIDATE_FORM.getInfo(), result);
-            } else {
-                return new Response<>(ResponseCode.FAILED_VALIDATE_FORM.getCode(), ResponseCode.FAILED_VALIDATE_FORM.getInfo(), result);
-            }
-        } catch (Exception e) {
-            log.error("校验动态表单数据失败，provider: {}, type: {}, 错误: {}",
-                    provider, type, e.getMessage(), e);
-            return new Response<>(ResponseCode.FAILED_VALIDATE_FORM.getCode(), ResponseCode.FAILED_VALIDATE_FORM.getInfo() + ": " + e.getMessage(), null);
-        }
-    }
+//    @RequestMapping(value = "model_form/validate",method = RequestMethod.POST)
+//    public Response<ValidationResult> validateFormData(@RequestParam String provider,
+//                                                       @RequestParam String type,
+//                                                       @RequestBody Map<String, Object> formData) {
+//        try {
+//            log.info("收到校验动态表单数据请求，provider: {}, type: {}", provider, type);
+//            ValidationResult result = modelService.validateFormData(provider, type, formData);
+//            if (result.isValid()) {
+//                return new Response<>(ResponseCode.SUCCESS_VALIDATE_FORM.getCode(), ResponseCode.SUCCESS_VALIDATE_FORM.getInfo(), result);
+//            } else {
+//                return new Response<>(ResponseCode.FAILED_VALIDATE_FORM.getCode(), ResponseCode.FAILED_VALIDATE_FORM.getInfo(), result);
+//            }
+//        } catch (Exception e) {
+//            log.error("校验动态表单数据失败，provider: {}, type: {}, 错误: {}",
+//                    provider, type, e.getMessage(), e);
+//            return new Response<>(ResponseCode.FAILED_VALIDATE_FORM.getCode(), ResponseCode.FAILED_VALIDATE_FORM.getInfo() + ": " + e.getMessage(), null);
+//        }
+//    }
 
     /**
      * 提交动态表单并创建模型

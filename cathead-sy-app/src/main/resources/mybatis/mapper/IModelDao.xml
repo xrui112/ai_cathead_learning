@@ -20,7 +20,9 @@
         <result column="presence_penalty" property="presencePenalty"/>
         <result column="embedding_format" property="embeddingFormat"/>
         <result column="num_predict" property="numPredict"/>
-                <!-- 乐观锁版本字段 -->
+        <!-- 动态属性字段 -->
+        <result column="dynamic_properties" property="dynamicProperties"/>
+        <!-- 乐观锁版本字段 -->
         <result column="version" property="version"/>
     </resultMap>
 
@@ -33,13 +35,13 @@
             model_id, model_name, provider_name, url, `key`, type,
             temperature, top_p, max_tokens, stop,
             frequency_penalty, presence_penalty, embedding_format, num_predict,
-            version
+            dynamic_properties, version
         )
         VALUES (
             #{modelId}, #{modelName}, #{providerName}, #{url}, #{key}, #{type},
             #{temperature}, #{topP}, #{maxTokens}, #{stop},
             #{frequencyPenalty}, #{presencePenalty}, #{embeddingFormat}, #{numPredict},
-            0
+            #{dynamicProperties}, 0
         )
     </insert>
 
@@ -49,7 +51,7 @@
             id, model_id, model_name, provider_name, url, `key`, type,
             temperature, top_p, max_tokens, stop,
             frequency_penalty, presence_penalty, embedding_format, num_predict,
-            version
+            dynamic_properties, version
         FROM
             model
         WHERE
@@ -73,6 +75,7 @@
             presence_penalty = #{presencePenalty},
             embedding_format = #{embeddingFormat},
             num_predict = #{numPredict},
+            dynamic_properties = #{dynamicProperties},
             version = version + 1
         WHERE
             model_id = #{modelId} AND version = #{version}

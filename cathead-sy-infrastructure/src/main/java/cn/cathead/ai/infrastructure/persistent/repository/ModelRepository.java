@@ -8,8 +8,8 @@ import cn.cathead.ai.domain.model.repository.IModelRepository;
 import cn.cathead.ai.infrastructure.persistent.dao.IModelDao;
 import cn.cathead.ai.infrastructure.persistent.po.ModelConfig;
 import cn.cathead.ai.infrastructure.persistent.po.ChatRequest;
+import cn.cathead.ai.types.utils.JsonUtils;
 import cn.cathead.ai.types.exception.OptimisticLockException;
-import com.fasterxml.jackson.databind.ser.Serializers;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
@@ -27,7 +27,6 @@ public class ModelRepository implements IModelRepository {
 
     @Override
     public long saveModelRecord(BaseModelEntity baseModelEntity) {
-        //redis 不存了 存数据库就行
         long version;
         if ("chat".equalsIgnoreCase(baseModelEntity.getType())){
 
@@ -45,6 +44,8 @@ public class ModelRepository implements IModelRepository {
             modelConfig.setStop(Arrays.toString(chatModelEntity.getStop()));
             modelConfig.setFrequencyPenalty(chatModelEntity.getFrequencyPenalty());
             modelConfig.setPresencePenalty(chatModelEntity.getPresencePenalty());
+            // 转换动态属性为JSON字符串
+            modelConfig.setDynamicProperties(JsonUtils.mapToJson(chatModelEntity.getDynamicProperties()));
             version=iModelDao.saveModelRecord(modelConfig);
 
         }else {
@@ -58,6 +59,8 @@ public class ModelRepository implements IModelRepository {
             modelConfig.setType(embeddingModelEntity.getType());
             modelConfig.setEmbeddingFormat(embeddingModelEntity.getEmbeddingFormat());
             modelConfig.setNumPredict(embeddingModelEntity.getNumPredict());
+            // 转换动态属性为JSON字符串
+            modelConfig.setDynamicProperties(JsonUtils.mapToJson(embeddingModelEntity.getDynamicProperties()));
             version=iModelDao.saveModelRecord(modelConfig);
 
         }
@@ -85,6 +88,8 @@ public class ModelRepository implements IModelRepository {
                     .stop(modelConfig.getStop() != null ? modelConfig.getStop().split(",") : null)
                     .frequencyPenalty(modelConfig.getFrequencyPenalty())
                     .presencePenalty(modelConfig.getPresencePenalty())
+                    // 转换JSON字符串为Map
+                    .dynamicProperties(JsonUtils.jsonToMap(modelConfig.getDynamicProperties()))
                     .version(modelConfig.getVersion())  // 添加版本号
                     .build();
         }else{
@@ -97,6 +102,8 @@ public class ModelRepository implements IModelRepository {
                     .type(modelConfig.getType())
                     .embeddingFormat(modelConfig.getEmbeddingFormat())
                     .numPredict(modelConfig.getNumPredict())
+                    // 转换JSON字符串为Map
+                    .dynamicProperties(JsonUtils.jsonToMap(modelConfig.getDynamicProperties()))
                     .version(modelConfig.getVersion())  // 添加版本号
                     .build();
         }
@@ -120,6 +127,8 @@ public class ModelRepository implements IModelRepository {
             modelConfig.setStop(Arrays.toString(chatModelEntity.getStop()));
             modelConfig.setFrequencyPenalty(chatModelEntity.getFrequencyPenalty());
             modelConfig.setPresencePenalty(chatModelEntity.getPresencePenalty());
+            // 转换动态属性为JSON字符串
+            modelConfig.setDynamicProperties(JsonUtils.mapToJson(chatModelEntity.getDynamicProperties()));
             modelConfig.setVersion(chatModelEntity.getVersion());
             affectedRows=iModelDao.updateModelRecord(modelConfig);
         }else {
@@ -133,6 +142,8 @@ public class ModelRepository implements IModelRepository {
             modelConfig.setType(embeddingModelEntity.getType());
             modelConfig.setEmbeddingFormat(embeddingModelEntity.getEmbeddingFormat());
             modelConfig.setNumPredict(embeddingModelEntity.getNumPredict());
+            // 转换动态属性为JSON字符串
+            modelConfig.setDynamicProperties(JsonUtils.mapToJson(embeddingModelEntity.getDynamicProperties()));
             modelConfig.setVersion(embeddingModelEntity.getVersion());
             affectedRows=iModelDao.updateModelRecord(modelConfig);
         }
@@ -168,6 +179,8 @@ public class ModelRepository implements IModelRepository {
                     .stop(modelConfig.getStop() != null ? modelConfig.getStop().split(",") : null)
                     .frequencyPenalty(modelConfig.getFrequencyPenalty())
                     .presencePenalty(modelConfig.getPresencePenalty())
+                    // 转换JSON字符串为Map
+                    .dynamicProperties(JsonUtils.jsonToMap(modelConfig.getDynamicProperties()))
                     .version(modelConfig.getVersion())  // 添加版本号
                     .build();
         }else{
@@ -180,6 +193,8 @@ public class ModelRepository implements IModelRepository {
                     .type(modelConfig.getType())
                     .embeddingFormat(modelConfig.getEmbeddingFormat())
                     .numPredict(modelConfig.getNumPredict())
+                    // 转换JSON字符串为Map
+                    .dynamicProperties(JsonUtils.jsonToMap(modelConfig.getDynamicProperties()))
                     .version(modelConfig.getVersion())  // 添加版本号
                     .build();
         }

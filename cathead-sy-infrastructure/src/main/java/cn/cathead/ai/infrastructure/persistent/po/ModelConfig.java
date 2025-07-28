@@ -3,6 +3,8 @@ package cn.cathead.ai.infrastructure.persistent.po;
 
 import lombok.Data;
 
+import java.util.Map;
+
 @Data
 public class ModelConfig {
     private Long id;  // 自增主键
@@ -24,6 +26,9 @@ public class ModelConfig {
     // Embedding 字段
     private String embeddingFormat;
     private Integer numPredict;
+
+    // 动态属性字段（存储JSON格式的扩展参数）
+    private String dynamicProperties;
 
     // 乐观锁版本字段
     private Long version;

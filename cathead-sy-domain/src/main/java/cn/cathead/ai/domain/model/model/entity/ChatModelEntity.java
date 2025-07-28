@@ -7,6 +7,8 @@ import lombok.Getter;
 import lombok.experimental.Accessors;
 import lombok.experimental.SuperBuilder;
 
+import java.util.Map;
+
 @Data
 @SuperBuilder
 @EqualsAndHashCode(callSuper = true)
@@ -18,4 +20,7 @@ public class ChatModelEntity extends BaseModelEntity {
     private Float presencePenalty;
     private Float frequencyPenalty;
     private String[] stop;
+    
+    // 动态属性，存储模型的扩展参数
+    private Map<String, Object> dynamicProperties;
 }

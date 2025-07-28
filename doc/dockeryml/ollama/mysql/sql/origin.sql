@@ -27,6 +27,9 @@ CREATE TABLE model (
                        embedding_format VARCHAR(64) DEFAULT NULL COMMENT 'Embedding格式',
                        num_predict INT DEFAULT NULL COMMENT '预测数量',
 
+    -- 动态属性字段（JSON格式存储不常见的模型参数）
+                       dynamic_properties JSON DEFAULT NULL COMMENT '动态属性，存储模型的扩展参数',
+
     -- 系统字段
                        create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
                        update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
@@ -45,18 +48,11 @@ CREATE INDEX idx_model_id_version ON model(model_id, version);
 CREATE INDEX idx_model_create_time ON model(create_time);
 CREATE INDEX idx_model_update_time ON model(update_time);
 
-
-
-
-
-
-
-
 -- 4. 插入测试数据（可选）
 INSERT INTO model (
     model_id, model_name, provider_name, url, `key`, type,
     temperature, top_p, max_tokens, stop, frequency_penalty, presence_penalty,
-    embedding_format, num_predict, version
+    embedding_format, num_predict, dynamic_properties, version
 ) VALUES
       (
           'test-chat-001',
@@ -66,7 +62,9 @@ INSERT INTO model (
           NULL,
           'chat',
           0.7, 0.9, 2048, NULL, 0.0, 0.0,
-          NULL, NULL, 0
+          NULL, NULL, 
+          JSON_OBJECT('seed', 42, 'top_k', 40, 'repeat_penalty', 1.1), 
+          0
       ),
       (
           'test-embedding-001',
@@ -76,7 +74,9 @@ INSERT INTO model (
           NULL,
           'embedding',
           NULL, NULL, NULL, NULL, NULL, NULL,
-          'float', 512, 0
+          'float', 512,
+          JSON_OBJECT('normalize', true, 'truncate', true),
+          0
       ),
       (
           'test-openai-001',
@@ -86,7 +86,9 @@ INSERT INTO model (
           'sk-your-api-key',
           'chat',
           0.8, 0.95, 4096, NULL, 0.1, 0.1,
-          NULL, NULL, 0
+          NULL, NULL,
+          JSON_OBJECT('logit_bias', JSON_OBJECT('50256', -100), 'user', 'test-user'),
+          0
       );
 
 -- 5. 查看表结构

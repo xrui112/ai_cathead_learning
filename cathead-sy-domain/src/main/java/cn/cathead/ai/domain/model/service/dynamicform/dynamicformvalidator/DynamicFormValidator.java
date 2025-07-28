@@ -36,7 +36,7 @@ public class DynamicFormValidator {
         // 先应用默认值，再进行校验
         Map<String, Object> formDataWithDefaults = applyDefaultValues(config, formData);
         
-        // 遍历所有字段定义进行校验
+        // 遍历所有字段定义进行校验 todo 后期要保证动态添加的字段也校验,所以在config 也就是yml文件中配置完全
         for (FieldDefinition field : config.getFields()) {
             validateField(field, formDataWithDefaults, result);
         }
