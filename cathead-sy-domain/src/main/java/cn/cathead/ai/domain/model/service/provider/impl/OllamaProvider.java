@@ -1,9 +1,10 @@
-package cn.cathead.ai.domain.model.service.provider.providerimpl;
+package cn.cathead.ai.domain.model.service.provider.impl;
 
 import cn.cathead.ai.domain.model.model.entity.ChatModelEntity;
 import cn.cathead.ai.domain.model.model.entity.EmbeddingModelEntity;
 import cn.cathead.ai.domain.model.model.valobj.ModelPropertyVo;
 import cn.cathead.ai.domain.model.service.provider.IModelProvider;
+import cn.cathead.ai.types.utils.ReflectionUtils;
 import io.micrometer.observation.ObservationRegistry;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.model.tool.ToolCallingManager;
@@ -77,6 +78,7 @@ public class OllamaProvider implements IModelProvider {
                 .baseUrl(embeddingModelEntity.getUrl())
                 .build(); // Ollama 也不需要 key
 
+
         OllamaOptions.Builder optionsBuilder = OllamaOptions.builder()
                 .model(embeddingModelEntity.getModelName())
                 .format(embeddingModelEntity.getEmbeddingFormat() == null
@@ -101,8 +103,6 @@ public class OllamaProvider implements IModelProvider {
 
     /**
      * 通过反射设置动态属性到Options Builder
-     * @param optionsBuilder Options Builder对象
-     * @param dynamicProperties 动态属性Map
      */
     private void applyDynamicProperties(OllamaOptions.Builder optionsBuilder, Map<String, Object> dynamicProperties) {
         for (Map.Entry<String, Object> entry : dynamicProperties.entrySet()) {
@@ -111,9 +111,9 @@ public class OllamaProvider implements IModelProvider {
             
             try {
                 // 尝试找到对应的setter方法
-                Method method = findSetterMethod(optionsBuilder.getClass(), propertyName, value);
+                Method method = ReflectionUtils.findSetterMethod(optionsBuilder.getClass(), propertyName, value);
                 if (method != null) {
-                    method.invoke(optionsBuilder, convertValue(value, method.getParameterTypes()[0]));
+                    method.invoke(optionsBuilder, ReflectionUtils.convertValue(value, method.getParameterTypes()[0]));
                     log.info("成功设置Ollama动态属性: {} = {}", propertyName, value);
                 } else {
                     log.warn("未找到Ollama属性的setter方法: {}", propertyName);
@@ -124,47 +124,5 @@ public class OllamaProvider implements IModelProvider {
         }
     }
     
-    /**
-     * 查找setter方法
-     */
-    private Method findSetterMethod(Class<?> clazz, String propertyName, Object value) {
-        String methodName = propertyName;
-        for (Method method : clazz.getMethods()) {
-            if (method.getName().equals(methodName) && method.getParameterCount() == 1) {
-                return method;
-            }
-        }
-        
-        return null;
-    }
-    
-    /**
-     * 转换值到目标类型
-     */
-    private Object convertValue(Object value, Class<?> targetType) {
-        if (value == null) {
-            return null;
-        }
-        
-        if (targetType.isAssignableFrom(value.getClass())) {
-            return value;
-        }
-        
-        // 基本类型转换
-        if (targetType == Double.class || targetType == double.class) {
-            return ((Number) value).doubleValue();
-        } else if (targetType == Float.class || targetType == float.class) {
-            return ((Number) value).floatValue();
-        } else if (targetType == Integer.class || targetType == int.class) {
-            return ((Number) value).intValue();
-        } else if (targetType == Long.class || targetType == long.class) {
-            return ((Number) value).longValue();
-        } else if (targetType == String.class) {
-            return value.toString();
-        } else if (targetType == Boolean.class || targetType == boolean.class) {
-            return Boolean.valueOf(value.toString());
-        }
-        
-        return value;
-    }
+
 }

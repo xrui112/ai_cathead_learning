@@ -3,18 +3,18 @@ import cn.cathead.ai.types.dto.ChatModelDTO;
 import cn.cathead.ai.types.dto.ChatRequestDTO;
 import cn.cathead.ai.types.dto.EmbeddingModelDTO;
 import cn.cathead.ai.domain.model.model.entity.ChatModelEntity;
-import cn.cathead.ai.domain.model.model.entity.ChatRequestEntity;
 import cn.cathead.ai.domain.model.model.entity.EmbeddingModelEntity;
 import cn.cathead.ai.domain.model.model.entity.BaseModelEntity;
 import cn.cathead.ai.domain.model.model.entity.FormConfiguration;
 import cn.cathead.ai.domain.model.model.entity.ValidationResult;
 import cn.cathead.ai.domain.model.repository.IModelRepository;
-import cn.cathead.ai.domain.model.service.dynamicform.IDynamicForm;
-import cn.cathead.ai.domain.model.service.modelbean.IModelBeanManager;
+import cn.cathead.ai.domain.model.service.form.IDynamicForm;
+import cn.cathead.ai.domain.model.service.modelcache.IModelCacheManager;
 import cn.cathead.ai.domain.model.service.modelcreation.IModelCreationService;
 import cn.cathead.ai.domain.model.service.provider.IModelProvider;
+import cn.cathead.ai.domain.model.service.update.impl.ChatModelUpdateService;
+import cn.cathead.ai.domain.model.service.update.impl.EmbeddingModelUpdateService;
 import cn.cathead.ai.types.exception.AppException;
-import cn.cathead.ai.types.exception.OptimisticLockException;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.model.ChatModel;
@@ -24,9 +24,7 @@ import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 
-import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 
@@ -42,7 +40,7 @@ public class ModelService implements IModelService {
 
     // 使用接口来管理模型Bean
     @Resource
-    private IModelBeanManager modelBeanManager;
+    private IModelCacheManager modelBeanManager;
 
     // 动态表单服务
     @Resource
@@ -51,16 +49,14 @@ public class ModelService implements IModelService {
     // 模型创建服务
     @Resource
     private IModelCreationService modelCreationService;
+    
+    // 模型更新服务
+    @Resource
+    private ChatModelUpdateService chatModelUpdateService;
+    
+    @Resource
+    private EmbeddingModelUpdateService embeddingModelUpdateService;
 
-    @Override
-    public String createModel(ChatModelDTO chatModelDTO) {
-        return modelCreationService.createChatModel(chatModelDTO);
-    }
-
-    @Override
-    public String createModel(EmbeddingModelDTO embeddingModelDTO) {
-        return modelCreationService.createEmbeddingModel(embeddingModelDTO);
-    }
 
     /**
      *  对应使用chatModel
@@ -72,11 +68,6 @@ public class ModelService implements IModelService {
      */
     @Override
     public Flux<ChatResponse> chatWith(ChatRequestDTO chatRequestDto) {
-        ChatRequestEntity chatRequestEntity = ChatRequestEntity.builder()
-                .modelId(chatRequestDto.getModelId())
-                .prompt(chatRequestDto.getPrompt())
-                .build();
-
         // !!!!!!先检查并确保缓存是最新版本 所有的model使用 都要先ensureLatestChatModel检查version
         ChatModel chatModel = ensureLatestChatModel(chatRequestDto.getModelId());
         
@@ -97,86 +88,17 @@ public class ModelService implements IModelService {
         );
     }
 
+
+    //todo 两个冗余接口 可以靠表单传入formdata 进行更新 考虑删除吧
     @Override
     public void updateChatModelConfig(String modelId, ChatModelDTO chatModelDTO) {
-        log.info("开始更新Chat模型配置，模型ID: {}", modelId);
-        BaseModelEntity currentEntity = iModelRepository.queryModelById(modelId);
-        if (currentEntity == null) {
-            throw new IllegalArgumentException("模型不存在，模型ID: " + modelId);
-        }
-
-        // 1. 构建新的ChatModelEntity
-        ChatModelEntity chatModelEntity = ChatModelEntity.builder()
-                .modelId(modelId) // 保持原有ID
-                .providerName(chatModelDTO.getProviderName())
-                .modelName(chatModelDTO.getModelName())
-                .url(chatModelDTO.getUrl())
-                .key(chatModelDTO.getKey())
-                .type(chatModelDTO.getType())
-                .temperature(chatModelDTO.getTemperature())
-                .topP(chatModelDTO.getTopP())
-                .maxTokens(chatModelDTO.getMaxTokens())
-                .presencePenalty(chatModelDTO.getPresencePenalty())
-                .frequencyPenalty(chatModelDTO.getFrequencyPenalty())
-                .stop(chatModelDTO.getStop())
-                .version(currentEntity.getVersion())
-                .build();
-
-        // 3. 尝试更新（可能抛出OptimisticLockException）
-    try {
-        iModelRepository.updateModelRecord(chatModelEntity);
-
-        BaseModelEntity updatedEntity = iModelRepository.queryModelById(modelId);
-
-        // 4. 更新成功，刷新内存中的模型Bean
-        modelBeanManager.updateChatModelBean(modelId, (ChatModelEntity) updatedEntity);
-        log.info("Chat模型配置更新成功，模型ID: {}", modelId);
-        
-    } catch (OptimisticLockException e) {
-        log.warn("Chat模型配置更新失败，存在并发冲突，模型ID: {}", modelId);
-        throw e; // 重新抛出异常让Controller处理
-    }
+        chatModelUpdateService.updateModel(modelId, chatModelDTO);
     }
 
+    //todo
     @Override
     public void updateEmbeddingModelConfig(String modelId, EmbeddingModelDTO embeddingModelDTO) {
-        log.info("开始更新Embedding模型配置，模型ID: {}", modelId);
-        BaseModelEntity currentEntity = iModelRepository.queryModelById(modelId);
-        if (currentEntity == null) {
-            throw new IllegalArgumentException("模型不存在，模型ID: " + modelId);
-        }
-        
-        // 1. 构建新的EmbeddingModelEntity
-        EmbeddingModelEntity embeddingModelEntity = EmbeddingModelEntity.builder()
-                .modelId(modelId) // 保持原有ID
-                .providerName(embeddingModelDTO.getProviderName())
-                .modelName(embeddingModelDTO.getModelName())
-                .url(embeddingModelDTO.getUrl())
-                .key(embeddingModelDTO.getKey())
-                .type(embeddingModelDTO.getType())
-                .embeddingFormat(embeddingModelDTO.getEmbeddingFormat())
-                .numPredict(embeddingModelDTO.getNumPredict())
-                .version(currentEntity.getVersion()) // 设置当前版本号
-                .build();
-        
-        // 2. 尝试更新（可能抛出OptimisticLockException）
-        try {
-        iModelRepository.updateModelRecord(embeddingModelEntity);
-
-        BaseModelEntity updatedEntity = iModelRepository.queryModelById(modelId);
-        
-        // 3. 使用ModelBeanManager更新模型Bean
-        EmbeddingModel newEmbeddingModel = modelBeanManager.updateEmbeddingModelBean(modelId, (EmbeddingModelEntity) updatedEntity);
-        
-        if (newEmbeddingModel != null) {
-            log.info("Embedding模型配置更新成功，模型ID: {}", modelId);
-        } else {
-            log.error("Embedding模型配置更新失败，无法创建新模型，模型ID: {}", modelId);
-            }
-        } catch (OptimisticLockException e) {
-            log.warn("Embedding模型配置更新失败，存在并发冲突，模型ID: {}", modelId);
-            throw e; // 重新抛出异常让Controller处理
-        }
+        embeddingModelUpdateService.updateModel(modelId, embeddingModelDTO);
     }
 
     @Override
@@ -340,194 +262,12 @@ public class ModelService implements IModelService {
 
     @Override
     public void updateChatModelConfigByFormData(String modelId, String provider, Map<String, Object> formData) {
-        log.info("开始使用formData更新Chat模型配置，模型ID: {}, provider: {}", modelId, provider);
-        
-        // 1. 获取当前模型实体（用于乐观锁）
-        BaseModelEntity currentEntity = iModelRepository.queryModelById(modelId);
-        if (currentEntity == null) {
-            throw new IllegalArgumentException("模型不存在，模型ID: " + modelId);
-        }
-        
-        if (!"chat".equalsIgnoreCase(currentEntity.getType())) {
-            throw new IllegalArgumentException("模型类型不匹配，期望: chat，实际: " + currentEntity.getType());
-        }
-        
-        // 2. 校验表单数据
-        ValidationResult validationResult = dynamicForm.validateFormData(provider, "chat", formData);
-        if (!validationResult.isValid()) {
-            log.error("表单数据校验失败: {}", validationResult.getAllErrors());
-            throw new RuntimeException("表单数据校验失败: " + validationResult.getAllErrors());
-        }
-        
-        // 3. 从formData构建ChatModelEntity（包括动态属性）
-        ChatModelEntity chatModelEntity = buildChatModelEntityFromFormData(modelId, provider, formData, currentEntity.getVersion());
-        
-        try {
-
-            iModelRepository.updateModelRecord(chatModelEntity);
-
-            BaseModelEntity updatedEntity = iModelRepository.queryModelById(modelId);
-            modelBeanManager.updateChatModelBean(modelId, (ChatModelEntity) updatedEntity);
-            log.info("Chat模型配置更新成功，模型ID: {}", modelId);
-            
-        } catch (OptimisticLockException e) {
-            log.warn("Chat模型配置更新失败，存在并发冲突，模型ID: {}", modelId);
-            throw e;
-        } catch (Exception e) {
-            log.error("Chat模型配置更新失败，模型ID: {}, 错误: {}", modelId, e.getMessage(), e);
-            throw e;
-        }
+        chatModelUpdateService.updateModelByFormData(modelId, provider, formData);
     }
 
     @Override
     public void updateEmbeddingModelConfigByFormData(String modelId, String provider, Map<String, Object> formData) {
-        log.info("开始使用formData更新Embedding模型配置，模型ID: {}, provider: {}", modelId, provider);
-        // 1. 获取当前模型实体（用于乐观锁）
-        BaseModelEntity currentEntity = iModelRepository.queryModelById(modelId);
-        if (currentEntity == null) {
-            throw new IllegalArgumentException("模型不存在，模型ID: " + modelId);
-        }
-        
-        if (!"embedding".equalsIgnoreCase(currentEntity.getType())) {
-            throw new IllegalArgumentException("模型类型不匹配，期望: embedding，实际: " + currentEntity.getType());
-        }
-        
-        // 2. 校验表单数据
-        ValidationResult validationResult = dynamicForm.validateFormData(provider, "embedding", formData);
-        if (!validationResult.isValid()) {
-            log.error("表单数据校验失败: {}", validationResult.getAllErrors());
-            throw new RuntimeException("表单数据校验失败: " + validationResult.getAllErrors());
-        }
-        
-        // 3. 从formData构建EmbeddingModelEntity（包括动态属性）
-        EmbeddingModelEntity embeddingModelEntity = buildEmbeddingModelEntityFromFormData(modelId, provider, formData, currentEntity.getVersion());
-        
-        try {
-            
+        embeddingModelUpdateService.updateModelByFormData(modelId, provider, formData);
+    }
 
-            iModelRepository.updateModelRecord(embeddingModelEntity);
-            BaseModelEntity updatedEntity = iModelRepository.queryModelById(modelId);
-            modelBeanManager.updateEmbeddingModelBean(modelId, (EmbeddingModelEntity) updatedEntity);
-            
-            log.info("Embedding模型配置更新成功，模型ID: {}", modelId);
-            
-        } catch (OptimisticLockException e) {
-            log.warn("Embedding模型配置更新失败，存在并发冲突，模型ID: {}", modelId);
-            throw e;
-        } catch (Exception e) {
-            log.error("Embedding模型配置更新失败，模型ID: {}, 错误: {}", modelId, e.getMessage(), e);
-            throw e;
-        }
-    }
-    
-    /**
-     * 从formData构建ChatModelEntity
-     */
-    private ChatModelEntity buildChatModelEntityFromFormData(String modelId, String provider, Map<String, Object> formData, Long version) {
-        // 标准字段
-        ChatModelEntity.ChatModelEntityBuilder builder = ChatModelEntity.builder()
-                .modelId(modelId)
-                .providerName(provider)
-                .modelName(getStringValue(formData, "modelName"))
-                .url(getStringValue(formData, "url"))
-                .key(getStringValue(formData, "key"))
-                .type("chat")
-                .temperature(getFloatValue(formData, "temperature"))
-                .topP(getFloatValue(formData, "topP"))
-                .maxTokens(getIntegerValue(formData, "maxTokens"))
-                .presencePenalty(getFloatValue(formData, "presencePenalty"))
-                .frequencyPenalty(getFloatValue(formData, "frequencyPenalty"))
-                .stop(getStringArrayValue(formData, "stop"))
-                .version(version);
-        
-        // 动态属性：除了标准字段外的其他字段
-        Map<String, Object> dynamicProperties = extractDynamicProperties(formData, 
-                "modelName", "url", "key", "temperature", "topP", "maxTokens", 
-                "presencePenalty", "frequencyPenalty", "stop");
-        
-        return builder.dynamicProperties(dynamicProperties).build();
-    }
-    
-    /**
-     * 从formData构建EmbeddingModelEntity
-     */
-    private EmbeddingModelEntity buildEmbeddingModelEntityFromFormData(String modelId, String provider, Map<String, Object> formData, Long version) {
-        // 标准字段
-        EmbeddingModelEntity.EmbeddingModelEntityBuilder builder = EmbeddingModelEntity.builder()
-                .modelId(modelId)
-                .providerName(provider)
-                .modelName(getStringValue(formData, "modelName"))
-                .url(getStringValue(formData, "url"))
-                .key(getStringValue(formData, "key"))
-                .type("embedding")
-                .embeddingFormat(getStringValue(formData, "embeddingFormat"))
-                .numPredict(getIntegerValue(formData, "numPredict"))
-                .version(version);
-        
-        // 动态属性：除了标准字段外的其他字段
-        Map<String, Object> dynamicProperties = extractDynamicProperties(formData, 
-                "modelName", "url", "key", "embeddingFormat", "numPredict");
-        
-        return builder.dynamicProperties(dynamicProperties).build();
-    }
-    
-    /**
-     * 提取动态属性
-     */
-    private Map<String, Object> extractDynamicProperties(Map<String, Object> formData, String... standardFields) {
-        Map<String, Object> dynamicProperties = new HashMap<>();
-        Set<String> standardFieldSet = Set.of(standardFields);
-        
-        for (Map.Entry<String, Object> entry : formData.entrySet()) {
-            if (!standardFieldSet.contains(entry.getKey())) {
-                dynamicProperties.put(entry.getKey(), entry.getValue());
-            }
-        }
-        
-        return dynamicProperties.isEmpty() ? null : dynamicProperties;
-    }
-    
-    // 辅助方法：安全获取各种类型的值
-    private String getStringValue(Map<String, Object> formData, String key) {
-        Object value = formData.get(key);
-        return value != null ? value.toString() : null;
-    }
-    
-    private Float getFloatValue(Map<String, Object> formData, String key) {
-        Object value = formData.get(key);
-        if (value == null) return null;
-        if (value instanceof Float) return (Float) value;
-        if (value instanceof Number) return ((Number) value).floatValue();
-        try {
-            return Float.valueOf(value.toString());
-        } catch (NumberFormatException e) {
-            log.warn("无法将值转换为Float，key: {}, value: {}", key, value);
-            return null;
-        }
-    }
-    
-    private Integer getIntegerValue(Map<String, Object> formData, String key) {
-        Object value = formData.get(key);
-        if (value == null) return null;
-        if (value instanceof Integer) return (Integer) value;
-        if (value instanceof Number) return ((Number) value).intValue();
-        try {
-            return Integer.valueOf(value.toString());
-        } catch (NumberFormatException e) {
-            log.warn("无法将值转换为Integer，key: {}, value: {}", key, value);
-            return null;
-        }
-    }
-    
-    private String[] getStringArrayValue(Map<String, Object> formData, String key) {
-        Object value = formData.get(key);
-        if (value == null) return null;
-        if (value instanceof String[]) return (String[]) value;
-        if (value instanceof String) {
-            String stringValue = (String) value;
-            if (stringValue.trim().isEmpty()) return null;
-            return stringValue.split(",");
-        }
-        return null;
-    }
 }

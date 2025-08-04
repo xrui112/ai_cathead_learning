@@ -1,4 +1,4 @@
-package cn.cathead.ai.domain.model.service.dynamicform.dynamicformvalidator;
+package cn.cathead.ai.domain.model.service.form.validator;
 
 import cn.cathead.ai.domain.model.model.entity.FieldDefinition;
 import cn.cathead.ai.domain.model.model.entity.FieldValidation;
@@ -15,7 +15,7 @@ import java.util.regex.Pattern;
 
 @Component
 @Slf4j
-public class DynamicFormValidator {
+public class FormValidator {
 
     /**
      * 校验表单数据
@@ -32,13 +32,11 @@ public class DynamicFormValidator {
             result.addError("system", "表单数据不能为空");
             return result;
         }
-        
-        // 先应用默认值，再进行校验
-        Map<String, Object> formDataWithDefaults = applyDefaultValues(config, formData);
+
         
         // 遍历所有字段定义进行校验 todo 后期要保证动态添加的字段也校验,所以在config 也就是yml文件中配置完全
         for (FieldDefinition field : config.getFields()) {
-            validateField(field, formDataWithDefaults, result);
+            validateField(field, formData, result);
         }
         
         return result;

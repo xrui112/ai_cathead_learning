@@ -3,9 +3,8 @@ package cn.cathead.ai.test.service;
 import cn.cathead.ai.domain.model.model.entity.ChatModelEntity;
 import cn.cathead.ai.domain.model.model.entity.EmbeddingModelEntity;
 import cn.cathead.ai.domain.model.repository.IModelRepository;
-import cn.cathead.ai.domain.model.service.IModelService;
 import cn.cathead.ai.domain.model.service.ModelService;
-import cn.cathead.ai.domain.model.service.modelbean.IModelBeanManager;
+import cn.cathead.ai.domain.model.service.modelcache.IModelCacheManager;
 import cn.cathead.ai.types.dto.ChatModelDTO;
 import cn.cathead.ai.types.dto.EmbeddingModelDTO;
 import cn.cathead.ai.types.exception.OptimisticLockException;
@@ -39,7 +38,7 @@ public class OptimisticLockTest {
     private IModelRepository modelRepository;
 
     @Mock
-    private IModelBeanManager modelBeanManager;
+    private IModelCacheManager modelBeanManager;
 
     @Mock
     private ChatModel mockChatModel;

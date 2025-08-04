@@ -4,7 +4,7 @@ import cn.cathead.ai.domain.model.model.entity.ChatModelEntity;
 import cn.cathead.ai.domain.model.model.entity.EmbeddingModelEntity;
 import cn.cathead.ai.domain.model.model.entity.ModelWrapper;
 import cn.cathead.ai.domain.model.repository.IModelRepository;
-import cn.cathead.ai.domain.model.service.modelbean.modelbeanmanagerimpl.ModelBeanManager;
+import cn.cathead.ai.domain.model.service.modelcache.ModelCacheManager;
 import cn.cathead.ai.domain.model.service.provider.IModelProvider;
 import com.google.common.cache.Cache;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,7 +29,7 @@ import static org.mockito.Mockito.*;
  * 纯单元测试，使用Mock对象，不需要Spring上下文
  */
 @DisplayName("ModelBeanManager 缓存管理测试")
-public class ModelBeanManagerTest {
+public class ModelCacheManagerTest {
 
     @Mock
     private IModelRepository modelRepository;
@@ -53,7 +53,7 @@ public class ModelBeanManagerTest {
     private EmbeddingModel mockEmbeddingModel;
 
     @InjectMocks
-    private ModelBeanManager modelBeanManager;
+    private ModelCacheManager modelCacheManager;
 
     private String testModelId;
     private ChatModelEntity testChatModelEntity;
@@ -120,7 +120,7 @@ public class ModelBeanManagerTest {
         when(mockProvider.createChat(testChatModelEntity)).thenReturn(mockChatModel);
 
         // When
-        ChatModel result = modelBeanManager.createChatModelInstance(testChatModelEntity);
+        ChatModel result = modelCacheManager.createChatModelInstance(testChatModelEntity);
 
         // Then
         assertNotNull(result);
@@ -148,7 +148,7 @@ public class ModelBeanManagerTest {
                 .build();
 
         // When
-        ChatModel result = modelBeanManager.createChatModelInstance(testChatModelEntity);
+        ChatModel result = modelCacheManager.createChatModelInstance(testChatModelEntity);
 
         // Then
         assertNull(result);
@@ -165,7 +165,7 @@ public class ModelBeanManagerTest {
                 .thenThrow(new RuntimeException("创建模型失败"));
 
         // When
-        ChatModel result = modelBeanManager.createChatModelInstance(testChatModelEntity);
+        ChatModel result = modelCacheManager.createChatModelInstance(testChatModelEntity);
 
         // Then
         assertNull(result);
@@ -181,7 +181,7 @@ public class ModelBeanManagerTest {
         when(mockProvider.createEmbedding(testEmbeddingModelEntity)).thenReturn(mockEmbeddingModel);
 
         // When
-        EmbeddingModel result = modelBeanManager.createEmbeddingModelInstance(testEmbeddingModelEntity);
+        EmbeddingModel result = modelCacheManager.createEmbeddingModelInstance(testEmbeddingModelEntity);
 
         // Then
         assertNotNull(result);
@@ -197,7 +197,7 @@ public class ModelBeanManagerTest {
         doNothing().when(chatModelCache).put(eq(testModelId), any(ModelWrapper.class));
 
         // When
-        modelBeanManager.saveChatModelToCache(mockChatModel, testChatModelEntity);
+        modelCacheManager.saveChatModelToCache(mockChatModel, testChatModelEntity);
 
         // Then
         verify(chatModelCache, times(1)).put(eq(testModelId), argThat(wrapper -> {
@@ -215,7 +215,7 @@ public class ModelBeanManagerTest {
         doNothing().when(embeddingModelCache).put(eq(testModelId), any(ModelWrapper.class));
 
         // When
-        modelBeanManager.saveEmbeddingModelToCache(mockEmbeddingModel, testEmbeddingModelEntity);
+        modelCacheManager.saveEmbeddingModelToCache(mockEmbeddingModel, testEmbeddingModelEntity);
 
         // Then
         verify(embeddingModelCache, times(1)).put(eq(testModelId), argThat(wrapper -> {
@@ -233,7 +233,7 @@ public class ModelBeanManagerTest {
         when(chatModelCache.getIfPresent(testModelId)).thenReturn(testChatModelWrapper);
 
         // When
-        ChatModel result = modelBeanManager.getChatModelBean(testModelId);
+        ChatModel result = modelCacheManager.getChatModelBean(testModelId);
 
         // Then
         assertNotNull(result);
@@ -250,7 +250,7 @@ public class ModelBeanManagerTest {
         when(chatModelCache.getIfPresent(testModelId)).thenReturn(null);
 
         // When
-        ChatModel result = modelBeanManager.getChatModelBean(testModelId);
+        ChatModel result = modelCacheManager.getChatModelBean(testModelId);
 
         // Then
         assertNull(result);
@@ -264,7 +264,7 @@ public class ModelBeanManagerTest {
         when(embeddingModelCache.getIfPresent(testModelId)).thenReturn(testEmbeddingModelWrapper);
 
         // When
-        EmbeddingModel result = modelBeanManager.getEmbeddingModelBean(testModelId);
+        EmbeddingModel result = modelCacheManager.getEmbeddingModelBean(testModelId);
 
         // Then
         assertNotNull(result);
@@ -279,7 +279,7 @@ public class ModelBeanManagerTest {
         when(chatModelCache.getIfPresent(testModelId)).thenReturn(testChatModelWrapper);
 
         // When
-        ModelWrapper<ChatModel> result = modelBeanManager.getChatModelWrapper(testModelId);
+        ModelWrapper<ChatModel> result = modelCacheManager.getChatModelWrapper(testModelId);
 
         // Then
         assertNotNull(result);
@@ -296,7 +296,7 @@ public class ModelBeanManagerTest {
         when(embeddingModelCache.getIfPresent(testModelId)).thenReturn(testEmbeddingModelWrapper);
 
         // When
-        ModelWrapper<EmbeddingModel> result = modelBeanManager.getEmbeddingModelWrapper(testModelId);
+        ModelWrapper<EmbeddingModel> result = modelCacheManager.getEmbeddingModelWrapper(testModelId);
 
         // Then
         assertNotNull(result);
@@ -314,7 +314,7 @@ public class ModelBeanManagerTest {
         doNothing().when(chatModelCache).invalidate(testModelId);
 
         // When
-        modelBeanManager.removeChatModelBean(testModelId);
+        modelCacheManager.removeChatModelBean(testModelId);
 
         // Then
         verify(chatModelCache, times(1)).getIfPresent(testModelId);
@@ -328,7 +328,7 @@ public class ModelBeanManagerTest {
         when(chatModelCache.getIfPresent(testModelId)).thenReturn(null);
 
         // When
-        modelBeanManager.removeChatModelBean(testModelId);
+        modelCacheManager.removeChatModelBean(testModelId);
 
         // Then
         verify(chatModelCache, times(1)).getIfPresent(testModelId);
@@ -343,7 +343,7 @@ public class ModelBeanManagerTest {
         doNothing().when(embeddingModelCache).invalidate(testModelId);
 
         // When
-        modelBeanManager.removeEmbeddingModelBean(testModelId);
+        modelCacheManager.removeEmbeddingModelBean(testModelId);
 
         // Then
         verify(embeddingModelCache, times(1)).getIfPresent(testModelId);
@@ -375,7 +375,7 @@ public class ModelBeanManagerTest {
         doNothing().when(chatModelCache).put(eq(testModelId), any(ModelWrapper.class));
 
         // When
-        ChatModel result = modelBeanManager.updateChatModelBean(testModelId, updatedEntity);
+        ChatModel result = modelCacheManager.updateChatModelBean(testModelId, updatedEntity);
 
         // Then
         assertNotNull(result);
@@ -413,7 +413,7 @@ public class ModelBeanManagerTest {
         doNothing().when(embeddingModelCache).put(eq(testModelId), any(ModelWrapper.class));
 
         // When
-        EmbeddingModel result = modelBeanManager.updateEmbeddingModelBean(testModelId, updatedEntity);
+        EmbeddingModel result = modelCacheManager.updateEmbeddingModelBean(testModelId, updatedEntity);
 
         // Then
         assertNotNull(result);
@@ -436,7 +436,7 @@ public class ModelBeanManagerTest {
         when(chatModelCache.asMap()).thenReturn(cacheMap);
 
         // When
-        Map<String, ChatModel> result = modelBeanManager.getAllChatModelCache();
+        Map<String, ChatModel> result = modelCacheManager.getAllChatModelCache();
 
         // Then
         assertNotNull(result);
@@ -455,7 +455,7 @@ public class ModelBeanManagerTest {
         when(embeddingModelCache.asMap()).thenReturn(cacheMap);
 
         // When
-        Map<String, EmbeddingModel> result = modelBeanManager.getAllEmbeddingModelCache();
+        Map<String, EmbeddingModel> result = modelCacheManager.getAllEmbeddingModelCache();
 
         // Then
         assertNotNull(result);
@@ -473,7 +473,7 @@ public class ModelBeanManagerTest {
         doNothing().when(embeddingModelCache).invalidateAll();
 
         // When
-        modelBeanManager.clearAllModelBeans();
+        modelCacheManager.clearAllModelBeans();
 
         // Then
         verify(chatModelCache, times(1)).invalidateAll();
@@ -488,7 +488,7 @@ public class ModelBeanManagerTest {
         when(embeddingModelCache.getIfPresent(testModelId)).thenReturn(null);
 
         // When
-        Long result = modelBeanManager.getCachedModelVersion(testModelId);
+        Long result = modelCacheManager.getCachedModelVersion(testModelId);
 
         // Then
         assertNotNull(result);
@@ -505,7 +505,7 @@ public class ModelBeanManagerTest {
         when(embeddingModelCache.getIfPresent(testModelId)).thenReturn(testEmbeddingModelWrapper);
 
         // When
-        Long result = modelBeanManager.getCachedModelVersion(testModelId);
+        Long result = modelCacheManager.getCachedModelVersion(testModelId);
 
         // Then
         assertNotNull(result);
@@ -522,7 +522,7 @@ public class ModelBeanManagerTest {
         when(embeddingModelCache.getIfPresent(testModelId)).thenReturn(null);
 
         // When
-        Long result = modelBeanManager.getCachedModelVersion(testModelId);
+        Long result = modelCacheManager.getCachedModelVersion(testModelId);
 
         // Then
         assertNull(result);
@@ -539,7 +539,7 @@ public class ModelBeanManagerTest {
         when(chatModelCache.getIfPresent(testModelId)).thenReturn(testChatModelWrapper);
 
         // When
-        ChatModel result = modelBeanManager.getChatModelBean(testModelId);
+        ChatModel result = modelCacheManager.getChatModelBean(testModelId);
 
         // Then
         assertNotNull(result);

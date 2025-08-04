@@ -1,10 +1,10 @@
-package cn.cathead.ai.domain.model.service.modelbean.modelbeanmanagerimpl;
+package cn.cathead.ai.domain.model.service.modelcache;
 
 import cn.cathead.ai.domain.model.model.entity.ChatModelEntity;
 import cn.cathead.ai.domain.model.model.entity.EmbeddingModelEntity;
 import cn.cathead.ai.domain.model.model.entity.ModelWrapper;
 import cn.cathead.ai.domain.model.repository.IModelRepository;
-import cn.cathead.ai.domain.model.service.modelbean.IModelBeanManager;
+import cn.cathead.ai.domain.model.service.modelcache.IModelCacheManager;
 import cn.cathead.ai.domain.model.service.provider.IModelProvider;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheStats;
@@ -25,7 +25,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @Component
 @Slf4j
-public class ModelBeanManager implements IModelBeanManager {
+public class ModelCacheManager implements IModelCacheManager {
 
     @Resource
     private Map<String, IModelProvider> modelProviderMap;

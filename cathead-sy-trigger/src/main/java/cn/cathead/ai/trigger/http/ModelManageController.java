@@ -1,12 +1,9 @@
 package cn.cathead.ai.trigger.http;
 import cn.cathead.ai.domain.model.model.entity.BaseModelEntity;
 import cn.cathead.ai.domain.model.model.entity.FormConfiguration;
-import cn.cathead.ai.domain.model.model.entity.ValidationResult;
-import cn.cathead.ai.domain.model.service.modelbean.IModelBeanManager;
+import cn.cathead.ai.domain.model.service.modelcache.IModelCacheManager;
 import cn.cathead.ai.domain.model.service.IModelService;
-import cn.cathead.ai.types.dto.ChatModelDTO;
-import cn.cathead.ai.types.dto.EmbeddingModelDTO;
-import cn.cathead.ai.types.exception.AppException;
+
 import cn.cathead.ai.types.model.Response;
 import cn.cathead.ai.types.enums.ResponseCode;
 import jakarta.annotation.Resource;
@@ -21,11 +18,9 @@ import java.util.Map;
  * 提供模型配置的增删改查功能
  * URL
  * base /api/v1/manage
- * /create_chat  /create_embedding
- * /chat  /embedding   分別是针对chat or embedding的接口
+ * /chat  /embedding   分别是针对chat or embedding的接口
  * /model  通用的接口
- * /model_form 动态表单的接口
- *
+ * /model_form 动态表单的接口（模型创建统一通过表单完成）
  *
  */
 @RestController
@@ -37,50 +32,7 @@ public class ModelManageController {
     private IModelService modelService;
 
     @Resource
-    private IModelBeanManager modelBeanManager;
-
-    @RequestMapping(value = "create_chat",method = RequestMethod.POST)
-    public Response<String> createChat(@RequestBody ChatModelDTO chatModelDto) {
-        try {
-            log.info("收到创建Chat模型请求: {}", chatModelDto);
-            String modelId = modelService.createModel(chatModelDto);
-            if (null==modelId){
-                throw new AppException("模型创建失败");
-            }
-            return Response.<String>builder()
-                    .code(ResponseCode.SUCCESS_CREATE.getCode())
-                    .info(ResponseCode.SUCCESS_CREATE.getInfo())
-                    .data(modelId)
-                    .build();
-        } catch (Exception e) {
-            log.error("创建Chat模型失败: {}", e.getMessage(), e);
-            return Response.<String>builder()
-                    .code(ResponseCode.FAILED_CREATE.getCode())
-                    .info(ResponseCode.FAILED_CREATE.getInfo() + ": " + e.getMessage())
-                    .data(null)
-                    .build();
-        }
-    }
-
-    @RequestMapping(value = "create_embedding",method = RequestMethod.POST)
-    public Response<String> createEmbedding(@RequestBody EmbeddingModelDTO embeddingModelDTO) {
-        try {
-            log.info("收到创建Embedding模型请求: {}", embeddingModelDTO);
-            String modelId = modelService.createModel(embeddingModelDTO);
-            return Response.<String>builder()
-                    .code(ResponseCode.SUCCESS_CREATE.getCode())
-                    .info(ResponseCode.SUCCESS_CREATE.getInfo())
-                    .data(modelId)
-                    .build();
-        } catch (Exception e) {
-            log.error("创建Embedding模型失败: {}", e.getMessage(), e);
-            return Response.<String>builder()
-                    .code(ResponseCode.FAILED_CREATE.getCode())
-                    .info(ResponseCode.FAILED_CREATE.getInfo() + ": " + e.getMessage())
-                    .data(null)
-                    .build();
-        }
-    }
+    private IModelCacheManager modelBeanManager;
 
 
     /**
@@ -184,7 +136,7 @@ public class ModelManageController {
      * 批量刷新所有模型缓存
      * @return 操作结果
      */
-    @RequestMapping(value = "model/refresh/all",method = RequestMethod.POST)
+    @RequestMapping(value = "model/refresh-all",method = RequestMethod.POST)
     public Response<String> refreshAllModelCache() {
         try {
             log.info("收到批量刷新所有模型缓存请求");
@@ -241,7 +193,7 @@ public class ModelManageController {
      * @param type 模型类型 (如: chat, embedding)
      * @return 表单配置信息
      */
-    @RequestMapping(value = "model_form/config",method = RequestMethod.GET)
+    @RequestMapping(value = "model-form/config",method = RequestMethod.GET)
     public Response<FormConfiguration> getFormConfiguration(@RequestParam String provider,
                                                             @RequestParam String type) {
         try {
@@ -259,33 +211,6 @@ public class ModelManageController {
         }
     }
 
-    /**
-     * 废置 校验逻辑在submit里编排
-     * 校验动态表单数据
-     * 用户提交表格时，先通过此接口走校验逻辑
-     * @param provider 提供商
-     * @param type 模型类型
-     * @param formData 表单数据
-     * @return 校验结果
-     */
-//    @RequestMapping(value = "model_form/validate",method = RequestMethod.POST)
-//    public Response<ValidationResult> validateFormData(@RequestParam String provider,
-//                                                       @RequestParam String type,
-//                                                       @RequestBody Map<String, Object> formData) {
-//        try {
-//            log.info("收到校验动态表单数据请求，provider: {}, type: {}", provider, type);
-//            ValidationResult result = modelService.validateFormData(provider, type, formData);
-//            if (result.isValid()) {
-//                return new Response<>(ResponseCode.SUCCESS_VALIDATE_FORM.getCode(), ResponseCode.SUCCESS_VALIDATE_FORM.getInfo(), result);
-//            } else {
-//                return new Response<>(ResponseCode.FAILED_VALIDATE_FORM.getCode(), ResponseCode.FAILED_VALIDATE_FORM.getInfo(), result);
-//            }
-//        } catch (Exception e) {
-//            log.error("校验动态表单数据失败，provider: {}, type: {}, 错误: {}",
-//                    provider, type, e.getMessage(), e);
-//            return new Response<>(ResponseCode.FAILED_VALIDATE_FORM.getCode(), ResponseCode.FAILED_VALIDATE_FORM.getInfo() + ": " + e.getMessage(), null);
-//        }
-//    }
 
     /**
      * 提交动态表单并创建模型
@@ -296,7 +221,7 @@ public class ModelManageController {
      * @param formData 表单数据
      * @return 创建结果
      */
-    @RequestMapping(value = "model_form/submit",method = RequestMethod.POST)
+    @RequestMapping(value = "model-form/submit",method = RequestMethod.POST)
     public Response<String> submitForm(@RequestParam String provider,
                                        @RequestParam String type,
                                        @RequestBody Map<String, Object> formData) {

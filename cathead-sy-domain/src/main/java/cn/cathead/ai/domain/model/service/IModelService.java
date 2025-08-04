@@ -16,9 +16,7 @@ import java.util.Map;
 
 public interface IModelService {
 
-    public String createModel(ChatModelDTO chatModelDTO);
 
-    public String createModel(EmbeddingModelDTO embeddingModelDTO);
 
     public Flux<ChatResponse> chatWith(ChatRequestDTO chatRequestDto);
 

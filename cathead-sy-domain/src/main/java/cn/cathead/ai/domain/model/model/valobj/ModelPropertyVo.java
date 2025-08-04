@@ -31,7 +31,7 @@ public enum ModelPropertyVo {
      *  numPredict
      */
 
-    //todo 设定默认值
+    //todo 设定默认值  系统级默认   用户配置>yml>Vo
     TEMPERATURE("0001", "0.7", "chat模型: 控制生成的随机性，范围 [0, 2]，越大越发散"),
     TOP_K("0002", "1.0", "chat模型: 核采样阈值（top_p），与 temperature 联合控制采样行为"),
     MAX_TOKENS("0003", "1024", "chat模型: 模型输出响应的最大 token 数，过大会消耗更多计算资源"),

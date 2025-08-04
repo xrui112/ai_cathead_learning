@@ -5,7 +5,7 @@ import cn.cathead.ai.domain.model.model.entity.FieldValidation;
 import cn.cathead.ai.domain.model.model.entity.FormConfiguration;
 import cn.cathead.ai.domain.model.model.entity.ValidationResult;
 import cn.cathead.ai.domain.model.model.valobj.FieldType;
-import cn.cathead.ai.domain.model.service.dynamicform.dynamicformvalidator.DynamicFormValidator;
+import cn.cathead.ai.domain.model.service.form.validator.FormValidator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @DisplayName("动态表单功能测试")
 public class DynamicFormTest {
 
-    private DynamicFormValidator dynamicFormValidator;
+    private FormValidator formValidator;
     private FormConfiguration testChatFormConfig;
     private Map<String, Object> validChatFormData;
     private Map<String, Object> invalidFormData;
@@ -29,7 +29,7 @@ public class DynamicFormTest {
     @BeforeEach
     public void setUp() {
         // 创建真实的校验器实例
-        dynamicFormValidator = new DynamicFormValidator();
+        formValidator = new FormValidator();
         
         setupTestData();
     }
@@ -135,7 +135,7 @@ public class DynamicFormTest {
         // 不提供 temperature，应该应用默认值
 
         // When
-        Map<String, Object> result = dynamicFormValidator.applyDefaultValues(testChatFormConfig, partialData);
+        Map<String, Object> result = formValidator.applyDefaultValues(testChatFormConfig, partialData);
 
         // Then
         assertNotNull(result);
@@ -148,7 +148,7 @@ public class DynamicFormTest {
     @DisplayName("测试有效数据校验")
     public void testValidateValidData() {
         // When
-        ValidationResult result = dynamicFormValidator.validateFormData(testChatFormConfig, validChatFormData);
+        ValidationResult result = formValidator.validateFormData(testChatFormConfig, validChatFormData);
 
         // Then
         assertNotNull(result);
@@ -160,7 +160,7 @@ public class DynamicFormTest {
     @DisplayName("测试无效数据校验")
     public void testValidateInvalidData() {
         // When
-        ValidationResult result = dynamicFormValidator.validateFormData(testChatFormConfig, invalidFormData);
+        ValidationResult result = formValidator.validateFormData(testChatFormConfig, invalidFormData);
 
         // Then
         assertNotNull(result);
@@ -182,7 +182,7 @@ public class DynamicFormTest {
         // 缺少必填的 modelName 和 url
 
         // When
-        ValidationResult result = dynamicFormValidator.validateFormData(testChatFormConfig, missingRequiredData);
+        ValidationResult result = formValidator.validateFormData(testChatFormConfig, missingRequiredData);
 
         // Then
         assertNotNull(result);
@@ -201,7 +201,7 @@ public class DynamicFormTest {
         outOfRangeData.put("temperature", 5.0); // 超出范围 (0-2)
 
         // When
-        ValidationResult result = dynamicFormValidator.validateFormData(testChatFormConfig, outOfRangeData);
+        ValidationResult result = formValidator.validateFormData(testChatFormConfig, outOfRangeData);
 
         // Then
         assertNotNull(result);
@@ -219,7 +219,7 @@ public class DynamicFormTest {
         wrongLengthData.put("temperature", 0.8);
 
         // When
-        ValidationResult result = dynamicFormValidator.validateFormData(testChatFormConfig, wrongLengthData);
+        ValidationResult result = formValidator.validateFormData(testChatFormConfig, wrongLengthData);
 
         // Then
         assertNotNull(result);
@@ -237,7 +237,7 @@ public class DynamicFormTest {
         invalidPatternData.put("temperature", 0.8);
 
         // When
-        ValidationResult result = dynamicFormValidator.validateFormData(testChatFormConfig, invalidPatternData);
+        ValidationResult result = formValidator.validateFormData(testChatFormConfig, invalidPatternData);
 
         // Then
         assertNotNull(result);
@@ -273,7 +273,7 @@ public class DynamicFormTest {
     @DisplayName("测试空配置处理")
     public void testNullConfigValidation() {
         // When
-        ValidationResult result = dynamicFormValidator.validateFormData(null, validChatFormData);
+        ValidationResult result = formValidator.validateFormData(null, validChatFormData);
 
         // Then
         assertNotNull(result);
@@ -285,7 +285,7 @@ public class DynamicFormTest {
     @DisplayName("测试空数据处理")
     public void testNullDataValidation() {
         // When
-        ValidationResult result = dynamicFormValidator.validateFormData(testChatFormConfig, null);
+        ValidationResult result = formValidator.validateFormData(testChatFormConfig, null);
 
         // Then
         assertNotNull(result);

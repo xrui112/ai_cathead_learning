@@ -1,4 +1,4 @@
-package cn.cathead.ai.domain.model.service.modelbean;
+package cn.cathead.ai.domain.model.service.modelcache;
 
 import cn.cathead.ai.domain.model.model.entity.ChatModelEntity;
 import cn.cathead.ai.domain.model.model.entity.EmbeddingModelEntity;
@@ -12,7 +12,7 @@ import java.util.Map;
  * 模型Bean管理接口
  * 定义模型Bean的创建、获取、更新、删除等操作
  */
-public interface IModelBeanManager {
+public interface IModelCacheManager {
 
     /**
      * 创建Chat模型实例

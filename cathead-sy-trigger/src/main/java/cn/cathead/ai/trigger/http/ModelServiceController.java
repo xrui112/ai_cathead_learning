@@ -22,7 +22,7 @@ public class ModelServiceController {
     @Resource
     private IModelService modelService;
 
-    @RequestMapping(value = "chat_with",method = RequestMethod.POST)
+    @RequestMapping(value = "chat-with",method = RequestMethod.POST)
     public Flux<org.springframework.ai.chat.model.ChatResponse> chatWith(@RequestBody ChatRequestDTO chatRequestDto) {
         return modelService.chatWith(chatRequestDto);
     }

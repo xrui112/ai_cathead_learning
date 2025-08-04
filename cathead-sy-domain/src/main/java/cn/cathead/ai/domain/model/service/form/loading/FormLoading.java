@@ -1,4 +1,4 @@
-package cn.cathead.ai.domain.model.service.dynamicform.formconfigurationmanager;
+package cn.cathead.ai.domain.model.service.form.loading;
 
 import cn.cathead.ai.domain.model.model.entity.FieldDefinition;
 import cn.cathead.ai.domain.model.model.entity.FieldValidation;
@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @Component
-public class FormConfigurationManager {
+public class FormLoading {
     
     private Map<String, FormConfiguration> configCache = new ConcurrentHashMap<>();
     private final ObjectMapper yamlMapper = new ObjectMapper(new YAMLFactory());
@@ -31,9 +31,9 @@ public class FormConfigurationManager {
             log.info("开始加载动态表单配置...");
             
             // 从classpath加载YAML配置文件
-            ClassPathResource resource = new ClassPathResource("dynamicform/dynamic-form.yml");
+            ClassPathResource resource = new ClassPathResource("form/dynamic-form.yml");
             if (!resource.exists()) {
-                log.warn("动态表单配置文件不存在: dynamicform/dynamic-form.yml");
+                log.warn("动态表单配置文件不存在: form/dynamic-form.yml");
                 return;
             }
             try (InputStream inputStream = resource.getInputStream()) {

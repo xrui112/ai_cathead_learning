@@ -1,9 +1,9 @@
-package cn.cathead.ai.domain.model.service.modelcreation.modelcreationserviceimpl;
+package cn.cathead.ai.domain.model.service.modelcreation;
 
 import cn.cathead.ai.domain.model.model.entity.ChatModelEntity;
 import cn.cathead.ai.domain.model.model.entity.EmbeddingModelEntity;
 import cn.cathead.ai.domain.model.repository.IModelRepository;
-import cn.cathead.ai.domain.model.service.modelbean.IModelBeanManager;
+import cn.cathead.ai.domain.model.service.modelcache.IModelCacheManager;
 import cn.cathead.ai.domain.model.service.modelcreation.IModelCreationService;
 import cn.cathead.ai.types.dto.ChatModelDTO;
 import cn.cathead.ai.types.dto.EmbeddingModelDTO;
@@ -27,7 +27,7 @@ public class ModelCreationService implements IModelCreationService {
     private IModelRepository iModelRepository;
 
     @Resource
-    private IModelBeanManager modelBeanManager;
+    private IModelCacheManager modelCacheManager;
 
     @Override
     public String createChatModel(ChatModelDTO chatModelDTO) {
@@ -47,7 +47,7 @@ public class ModelCreationService implements IModelCreationService {
                 .build();
 
         // 1. 创建模型实例
-        ChatModel chatModel = modelBeanManager.createChatModelInstance(chatModelEntity);
+        ChatModel chatModel = modelCacheManager.createChatModelInstance(chatModelEntity);
 
         if (chatModel == null) {
             log.error("创建Chat模型实例失败: {}", chatModelEntity.getModelName());
@@ -62,7 +62,7 @@ public class ModelCreationService implements IModelCreationService {
                 chatModelEntity.getModelId(), chatModelEntity.getVersion());
 
         // 3. 存入缓存
-        modelBeanManager.saveChatModelToCache(chatModel, chatModelEntity);
+        modelCacheManager.saveChatModelToCache(chatModel, chatModelEntity);
         log.info("Chat模型创建成功: {}", chatModelEntity.getModelId());
         return chatModelEntity.getModelId();
     }
@@ -81,7 +81,7 @@ public class ModelCreationService implements IModelCreationService {
                 .build();
 
         // 1. 创建模型实例
-        EmbeddingModel embeddingModel = modelBeanManager.createEmbeddingModelInstance(embeddingModelEntity);
+        EmbeddingModel embeddingModel = modelCacheManager.createEmbeddingModelInstance(embeddingModelEntity);
 
         if (embeddingModel == null) {
             log.error("创建Embedding模型实例失败: {}", embeddingModelEntity.getModelName());
@@ -96,7 +96,7 @@ public class ModelCreationService implements IModelCreationService {
                 embeddingModelEntity.getModelId(), embeddingModelEntity.getVersion());
 
         // 3. 存入缓存
-        modelBeanManager.saveEmbeddingModelToCache(embeddingModel, embeddingModelEntity);
+        modelCacheManager.saveEmbeddingModelToCache(embeddingModel, embeddingModelEntity);
         log.info("Embedding模型创建成功: {}", embeddingModelEntity.getModelId());
         return embeddingModelEntity.getModelId();
     }
