@@ -14,7 +14,9 @@ import cn.cathead.ai.domain.model.service.modelcreation.IModelCreationService;
 import cn.cathead.ai.domain.model.service.provider.IModelProvider;
 import cn.cathead.ai.domain.model.service.update.impl.ChatModelUpdateService;
 import cn.cathead.ai.domain.model.service.update.impl.EmbeddingModelUpdateService;
+import cn.cathead.ai.types.enums.ResponseCode;
 import cn.cathead.ai.types.exception.AppException;
+import cn.cathead.ai.types.model.Response;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.model.ChatModel;
@@ -67,7 +69,7 @@ public class ModelService implements IModelService {
      *
      */
     @Override
-    public Flux<ChatResponse> chatWith(ChatRequestDTO chatRequestDto) {
+    public Flux<ChatResponse> chatWithStream(ChatRequestDTO chatRequestDto) {
         // !!!!!!先检查并确保缓存是最新版本 所有的model使用 都要先ensureLatestChatModel检查version
         ChatModel chatModel = ensureLatestChatModel(chatRequestDto.getModelId());
         
@@ -84,6 +86,28 @@ public class ModelService implements IModelService {
         return chatModel.stream(
                 new Prompt(
                     message
+                )
+        );
+    }
+
+    @Override
+    public ChatResponse chatWith(ChatRequestDTO chatRequestDto) {
+        // !!!!!!先检查并确保缓存是最新版本 所有的model使用 都要先ensureLatestChatModel检查version
+        ChatModel chatModel = ensureLatestChatModel(chatRequestDto.getModelId());
+
+        if (chatModel != null) {
+            return generate(chatModel, chatRequestDto.getPrompt());
+        }else {
+            throw new AppException(ResponseCode.FAILED_CHAT.getCode(),ResponseCode.FAILED_CHAT.getInfo());
+        }
+
+    }
+
+    public ChatResponse generate(ChatModel chatModel,String message) {
+        log.info("调用普通聊天接口");
+        return chatModel.call(
+                new Prompt(
+                        message
                 )
         );
     }
@@ -259,6 +283,8 @@ public class ModelService implements IModelService {
         log.info("提交动态表单，provider: {}, type: {}", provider, type);
         return dynamicForm.submitForm(provider, type, formData);
     }
+
+
 
     @Override
     public void updateChatModelConfigByFormData(String modelId, String provider, Map<String, Object> formData) {

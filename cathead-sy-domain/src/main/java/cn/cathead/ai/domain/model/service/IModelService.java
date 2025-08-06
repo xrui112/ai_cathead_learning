@@ -7,6 +7,7 @@ import cn.cathead.ai.domain.model.model.entity.ValidationResult;
 import cn.cathead.ai.types.dto.ChatModelDTO;
 import cn.cathead.ai.types.dto.ChatRequestDTO;
 import cn.cathead.ai.types.dto.EmbeddingModelDTO;
+import cn.cathead.ai.types.model.Response;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.embedding.EmbeddingModel;
@@ -18,7 +19,7 @@ public interface IModelService {
 
 
 
-    public Flux<ChatResponse> chatWith(ChatRequestDTO chatRequestDto);
+    public Flux<ChatResponse> chatWithStream(ChatRequestDTO chatRequestDto);
 
     public void updateChatModelConfig(String modelId, ChatModelDTO chatModelDTO);
 
@@ -85,4 +86,10 @@ public interface IModelService {
      */
     String submitForm(String provider, String type, Map<String, Object> formData);
 
+    /**
+     *
+     * @param chatRequestDto
+     * @return 普通调用chat
+     */
+    ChatResponse chatWith(ChatRequestDTO chatRequestDto);
 }

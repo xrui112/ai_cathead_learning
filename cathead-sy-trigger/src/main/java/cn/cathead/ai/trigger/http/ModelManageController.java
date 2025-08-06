@@ -222,8 +222,8 @@ public class ModelManageController {
      * @return 创建结果
      */
     @RequestMapping(value = "model-form/submit",method = RequestMethod.POST)
-    public Response<String> submitForm(@RequestParam String provider,
-                                       @RequestParam String type,
+    public Response<String> submitForm(@RequestParam("provider") String provider,
+                                       @RequestParam("type") String type,
                                        @RequestBody Map<String, Object> formData) {
         try {
             log.info("收到提交动态表单请求，provider: {}, type: {}", provider, type);

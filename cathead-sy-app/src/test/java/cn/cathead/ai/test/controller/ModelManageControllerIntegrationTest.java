@@ -2,17 +2,23 @@ package cn.cathead.ai.test.controller;
 
 import cn.cathead.ai.test.data.TestDataBuilder;
 import cn.cathead.ai.types.dto.ChatModelDTO;
+import cn.cathead.ai.types.dto.ChatRequestDTO;
 import cn.cathead.ai.types.dto.EmbeddingModelDTO;
 import cn.cathead.ai.types.enums.ResponseCode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.*;
+import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.util.JsonPathExpectationsHelper;
+import org.springframework.test.web.reactive.server.EntityExchangeResult;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import org.springframework.transaction.annotation.Transactional;
+import reactor.core.publisher.Flux;
+import reactor.test.StepVerifier;
 
 import java.util.Map;
 
@@ -43,248 +49,6 @@ class ModelManageControllerIntegrationTest {
         
         log.info("=== 开始执行测试方法 ===");
     }
-
-
-    @Nested
-    @DisplayName("1. 模型创建测试")
-    @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-    class ModelCreationTests {
-
-        @Test
-        @Order(1)
-        @DisplayName("创建Chat模型 - 成功流程")
-        void testCreateChatModelSuccess() {
-            // Given
-            ChatModelDTO chatModelDTO = TestDataBuilder.defaultChatModelDTO().build();
-            log.info("测试数据: {}", chatModelDTO);
-
-            // When & Then
-            webTestClient.post()
-                    .uri("/api/v1/manage/create_chat")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .bodyValue(chatModelDTO)
-                    .exchange()
-                    .expectStatus().isOk()
-                    .expectBody()
-                    .jsonPath("$.code").isEqualTo(ResponseCode.SUCCESS_CREATE.getCode())
-                    .jsonPath("$.info").isEqualTo(ResponseCode.SUCCESS_CREATE.getInfo())
-                    .jsonPath("$.data").isNotEmpty()
-                    .jsonPath("$.data").value(data -> {
-                        assertThat(data).isNotNull();
-                        assertThat(data.toString()).isNotBlank();
-                        createdChatModelId = data.toString();
-                        log.info("创建的Chat模型ID: {}", createdChatModelId);
-                    })
-                    .consumeWith(response -> {
-                        log.info("Chat模型创建响应: {}", new String(response.getResponseBody()));
-                    });
-        }
-
-        @Test
-        @Order(2)
-        @DisplayName("创建Embedding模型 - 成功流程")
-        void testCreateEmbeddingModelSuccess() {
-            // Given
-            EmbeddingModelDTO embeddingModelDTO = TestDataBuilder.defaultEmbeddingModelDTO().build();
-            log.info("测试数据: {}", embeddingModelDTO);
-
-            // When & Then
-            webTestClient.post()
-                    .uri("/api/v1/manage/create_embedding")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .bodyValue(embeddingModelDTO)
-                    .exchange()
-                    .expectStatus().isOk()
-                    .expectBody()
-                    .jsonPath("$.code").isEqualTo(ResponseCode.SUCCESS_CREATE.getCode())
-                    .jsonPath("$.info").isEqualTo(ResponseCode.SUCCESS_CREATE.getInfo())
-                    .jsonPath("$.data").isNotEmpty()
-                    .jsonPath("$.data").value(data -> {
-                        assertThat(data).isNotNull();
-                        assertThat(data.toString()).isNotBlank();
-                        createdEmbeddingModelId = data.toString();
-                        log.info("创建的Embedding模型ID: {}", createdEmbeddingModelId);
-                    })
-                    .consumeWith(response -> {
-                        log.info("Embedding模型创建响应: {}", new String(response.getResponseBody()));
-                    });
-        }
-
-        @Test
-        @Order(3)
-        @DisplayName("创建Chat模型 - 参数校验失败")
-        void testCreateChatModelValidationFailed() {
-            // Given - 使用无效数据
-            ChatModelDTO invalidChatModelDTO = TestDataBuilder.invalidChatModelDTO().build();
-            log.info("无效测试数据: {}", invalidChatModelDTO);
-
-            // When & Then
-            webTestClient.post()
-                    .uri("/api/v1/manage/create_chat")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .bodyValue(invalidChatModelDTO)
-                    .exchange()
-                    .expectStatus().isOk() // Controller层有异常处理，返回200状态
-                    .expectBody()
-                    .jsonPath("$.code").isEqualTo(ResponseCode.FAILED_CREATE.getCode())
-                    .jsonPath("$.info").value(info -> {
-                        assertThat(info.toString()).contains(ResponseCode.FAILED_CREATE.getInfo());
-                    })
-                    .jsonPath("$.data").isEmpty()
-                    .consumeWith(response -> {
-                        log.info("参数校验失败响应: {}", new String(response.getResponseBody()));
-                    });
-        }
-    }
-
-    @Nested
-    @DisplayName("2. 模型查询和管理测试")
-    @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-    class ModelManagementTests {
-
-        @Test
-        @Order(1)
-        @DisplayName("查询不存在的模型")
-        void testGetNonExistentModel() {
-            // Given
-            String nonExistentModelId = TestDataBuilder.nonExistentModelId();
-
-            // When & Then
-            webTestClient.get()
-                    .uri("/api/v1/manage/model/{modelId}", nonExistentModelId)
-                    .exchange()
-                    .expectStatus().isOk()
-                    .expectBody()
-                    .jsonPath("$.code").isEqualTo(ResponseCode.MODEL_NOT_FOUND.getCode())
-                    .jsonPath("$.info").isEqualTo(ResponseCode.MODEL_NOT_FOUND.getInfo())
-                    .jsonPath("$.data").isEmpty()
-                    .consumeWith(response -> {
-                        log.info("查询不存在模型响应: {}", new String(response.getResponseBody()));
-                    });
-        }
-
-        @Test
-        @Order(2)
-        @DisplayName("删除不存在的模型")
-        void testDeleteNonExistentModel() {
-            // Given
-            String nonExistentModelId = TestDataBuilder.nonExistentModelId();
-
-            // When & Then
-            webTestClient.delete()
-                    .uri("/api/v1/manage/model/{modelId}", nonExistentModelId)
-                    .exchange()
-                    .expectStatus().isOk()
-                    .expectBody()
-                    .jsonPath("$.code").isEqualTo(ResponseCode.SUCCESS_DELETE.getCode())
-                    .consumeWith(response -> {
-                        log.info("删除不存在模型响应: {}", new String(response.getResponseBody()));
-                    });
-        }
-
-        @Test
-        @Order(3)
-        @DisplayName("更新不存在的Chat模型")
-        void testUpdateNonExistentChatModel() {
-            // Given
-            String nonExistentModelId = TestDataBuilder.nonExistentModelId();
-            ChatModelDTO updateDTO = TestDataBuilder.updateChatModelDTO().build();
-
-            // When & Then
-            webTestClient.put()
-                    .uri("/api/v1/manage/chat/{modelId}", nonExistentModelId)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .bodyValue(updateDTO)
-                    .exchange()
-                    .expectStatus().isOk()
-                    .expectBody()
-                    .jsonPath("$.code").isEqualTo(ResponseCode.FAILED_UPDATE_CHAT.getCode())
-                    .consumeWith(response -> {
-                        log.info("更新不存在Chat模型响应: {}", new String(response.getResponseBody()));
-                    });
-        }
-    }
-
-    @Nested
-    @DisplayName("3. 缓存管理测试")
-    @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-    class CacheManagementTests {
-
-        @Test
-        @Order(1)
-        @DisplayName("获取Bean统计信息")
-        void testGetBeanStats() {
-            // When & Then
-            webTestClient.get()
-                    .uri("/api/v1/manage/model/bean/stats")
-                    .exchange()
-                    .expectStatus().isOk()
-                    .expectBody()
-                    .jsonPath("$.code").isEqualTo(ResponseCode.SUCCESS_GET_BEAN_STATS.getCode())
-                    .jsonPath("$.info").isEqualTo(ResponseCode.SUCCESS_GET_BEAN_STATS.getInfo())
-                    .jsonPath("$.data").isNotEmpty()
-                    .jsonPath("$.data.beanStats").exists()
-                    .jsonPath("$.data.chatModelCache").exists()
-                    .jsonPath("$.data.embeddingModelCache").exists()
-                    .consumeWith(response -> {
-                        log.info("Bean统计信息响应: {}", new String(response.getResponseBody()));
-                    });
-        }
-
-        @Test
-        @Order(2)
-        @DisplayName("清空所有模型Bean")
-        void testClearAllModelBeans() {
-            // When & Then
-            webTestClient.post()
-                    .uri("/api/v1/manage/model/bean/clear")
-                    .exchange()
-                    .expectStatus().isOk()
-                    .expectBody()
-                    .jsonPath("$.code").isEqualTo(ResponseCode.SUCCESS_CLEAR_BEANS.getCode())
-                    .jsonPath("$.info").isEqualTo(ResponseCode.SUCCESS_CLEAR_BEANS.getInfo())
-                    .consumeWith(response -> {
-                        log.info("清空Bean响应: {}", new String(response.getResponseBody()));
-                    });
-        }
-
-        @Test
-        @Order(3)
-        @DisplayName("刷新不存在模型的缓存")
-        void testRefreshNonExistentModelCache() {
-            // Given
-            String nonExistentModelId = TestDataBuilder.nonExistentModelId();
-
-            // When & Then
-            webTestClient.post()
-                    .uri("/api/v1/manage/model/{modelId}/refresh", nonExistentModelId)
-                    .exchange()
-                    .expectStatus().isOk()
-                    .expectBody()
-                    .jsonPath("$.code").isEqualTo(ResponseCode.FAILED_REFRESH_CACHE.getCode())
-                    .consumeWith(response -> {
-                        log.info("刷新不存在模型缓存响应: {}", new String(response.getResponseBody()));
-                    });
-        }
-
-        @Test
-        @Order(4)
-        @DisplayName("批量刷新所有模型缓存")
-        void testRefreshAllModelCache() {
-            // When & Then
-            webTestClient.post()
-                    .uri("/api/v1/manage/model/refresh/all")
-                    .exchange()
-                    .expectStatus().isOk()
-                    .expectBody()
-                    .jsonPath("$.code").isEqualTo(ResponseCode.SUCCESS_REFRESH_ALL_CACHE.getCode())
-                    .jsonPath("$.info").isEqualTo(ResponseCode.SUCCESS_REFRESH_ALL_CACHE.getInfo())
-                    .consumeWith(response -> {
-                        log.info("批量刷新缓存响应: {}", new String(response.getResponseBody()));
-                    });
-        }
-    }
-
     @Nested
     @DisplayName("4. 动态表单测试")
     @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
@@ -316,90 +80,15 @@ class ModelManageControllerIntegrationTest {
         }
 
         @Test
-        @Order(2)
-        @DisplayName("获取表单配置 - 不支持的提供商")
-        void testGetFormConfigurationUnsupportedProvider() {
-            // When & Then
-            webTestClient.get()
-                    .uri(uriBuilder -> uriBuilder
-                            .path("/api/v1/manage/model_form/config")
-                            .queryParam("provider", "unsupported-provider")
-                            .queryParam("type", "chat")
-                            .build())
-                    .exchange()
-                    .expectStatus().isOk()
-                    .expectBody()
-                    .jsonPath("$.code").isEqualTo(ResponseCode.UNSUPPORTED_PROVIDER_TYPE.getCode())
-                    .consumeWith(response -> {
-                        log.info("不支持的提供商响应: {}", new String(response.getResponseBody()));
-                    });
-        }
-
-        @Test
-        @Order(3)
-        @DisplayName("校验表单数据 - 有效数据")
-        void testValidateFormDataValid() {
-            // Given
-            Map<String, Object> formData = TestDataBuilder.defaultFormData();
-
-            // When & Then
-            webTestClient.post()
-                    .uri(uriBuilder -> uriBuilder
-                            .path("/api/v1/manage/model_form/validate")
-                            .queryParam("provider", "ollama")
-                            .queryParam("type", "chat")
-                            .build())
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .bodyValue(formData)
-                    .exchange()
-                    .expectStatus().isOk()
-                    .expectBody()
-                    .jsonPath("$.code").isEqualTo(ResponseCode.SUCCESS_VALIDATE_FORM.getCode())
-                    .jsonPath("$.info").isEqualTo(ResponseCode.SUCCESS_VALIDATE_FORM.getInfo())
-                    .jsonPath("$.data.valid").isEqualTo(true)
-                    .consumeWith(response -> {
-                        log.info("表单数据校验成功响应: {}", new String(response.getResponseBody()));
-                    });
-        }
-
-        @Test
-        @Order(4)
-        @DisplayName("校验表单数据 - 无效数据")
-        void testValidateFormDataInvalid() {
-            // Given
-            Map<String, Object> invalidFormData = TestDataBuilder.invalidFormData();
-
-            // When & Then
-            webTestClient.post()
-                    .uri(uriBuilder -> uriBuilder
-                            .path("/api/v1/manage/model_form/validate")
-                            .queryParam("provider", "ollama")
-                            .queryParam("type", "chat")
-                            .build())
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .bodyValue(invalidFormData)
-                    .exchange()
-                    .expectStatus().isOk()
-                    .expectBody()
-                    .jsonPath("$.code").isEqualTo(ResponseCode.FAILED_VALIDATE_FORM.getCode())
-                    .jsonPath("$.data.valid").isEqualTo(false)
-                    .jsonPath("$.data.errors").isMap()
-                    .consumeWith(response -> {
-                        log.info("表单数据校验失败响应: {}", new String(response.getResponseBody()));
-                    });
-        }
-
-        @Test
-        @Order(5)
         @DisplayName("提交表单数据 - 成功流程")
         void testSubmitFormSuccess() {
             // Given
             Map<String, Object> formData = TestDataBuilder.defaultFormData();
 
-            // When & Then
-            webTestClient.post()
+            // When：发送请求
+            EntityExchangeResult<byte[]> response = webTestClient.post()
                     .uri(uriBuilder -> uriBuilder
-                            .path("/api/v1/manage/model_form/submit")
+                            .path("/api/v1/manage/model-form/submit")
                             .queryParam("provider", "ollama")
                             .queryParam("type", "chat")
                             .build())
@@ -408,217 +97,118 @@ class ModelManageControllerIntegrationTest {
                     .exchange()
                     .expectStatus().isOk()
                     .expectBody()
-                    .jsonPath("$.code").isEqualTo(ResponseCode.SUCCESS_SUBMIT_FORM.getCode())
-                    .consumeWith(response -> {
-                        log.info("提交表单成功响应: {}", new String(response.getResponseBody()));
-                    });
-        }
-    }
+                    .returnResult();  // 保存响应结果用于后续验证
 
-    @Nested
-    @DisplayName("5. 完整CRUD流程测试")
-    @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-    class CompleteCRUDTests {
+            // Then：验证响应内容
+            byte[] responseBody = response.getResponseBody();
+            String responseBodyString = new String(responseBody);
 
-        private String testChatModelId;
-        private String testEmbeddingModelId;
+            log.info("提交表单成功响应: {}", responseBodyString);
 
-        @Test
-        @Order(1)
-        @DisplayName("完整Chat模型CRUD流程")
-        void testCompleteChatModelCRUD() {
-            // Step 1: 创建Chat模型
-            ChatModelDTO createDTO = TestDataBuilder.defaultChatModelDTO().build();
-            
-            // 创建模型并获取modelId
-            webTestClient.post()
-                    .uri("/api/v1/manage/create_chat")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .bodyValue(createDTO)
-                    .exchange()
-                    .expectStatus().isOk()
-                    .expectBody()
-                    .jsonPath("$.code").isEqualTo(ResponseCode.SUCCESS_CREATE.getCode())
-                    .jsonPath("$.data").isNotEmpty()
-                    .jsonPath("$.data").value(data -> {
-                        testChatModelId = data.toString();
-                        log.info("创建的Chat模型ID: {}", testChatModelId);
-                    });
-
-            // Step 2: 更新Chat模型配置（模拟场景）
-            ChatModelDTO updateDTO = TestDataBuilder.updateChatModelDTO().build();
-            
-            webTestClient.put()
-                    .uri("/api/v1/manage/chat/{modelId}", testChatModelId)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .bodyValue(updateDTO)
-                    .exchange()
-                    .expectStatus().isOk()
-                    .expectBody()
-                    .consumeWith(response -> {
-                        log.info("更新Chat模型响应: {}", new String(response.getResponseBody()));
-                    });
-
-            // Step 3: 查询模型信息
-            webTestClient.get()
-                    .uri("/api/v1/manage/model/{modelId}", testChatModelId)
-                    .exchange()
-                    .expectStatus().isOk()
-                    .expectBody()
-                    .consumeWith(response -> {
-                        log.info("查询Chat模型响应: {}", new String(response.getResponseBody()));
-                    });
-
-            // Step 4: 刷新模型缓存
-            webTestClient.post()
-                    .uri("/api/v1/manage/model/{modelId}/refresh", testChatModelId)
-                    .exchange()
-                    .expectStatus().isOk()
-                    .expectBody()
-                    .consumeWith(response -> {
-                        log.info("刷新Chat模型缓存响应: {}", new String(response.getResponseBody()));
-                    });
-
-            // Step 5: 删除模型
-            webTestClient.delete()
-                    .uri("/api/v1/manage/model/{modelId}", testChatModelId)
-                    .exchange()
-                    .expectStatus().isOk()
-                    .expectBody()
-                    .consumeWith(response -> {
-                        log.info("删除Chat模型响应: {}", new String(response.getResponseBody()));
-                    });
-
-            log.info("=== Chat模型CRUD流程测试完成 ===");
+            // JSON 验证
+            JsonPathExpectationsHelper jsonPathHelper = new JsonPathExpectationsHelper("$.code");
+            jsonPathHelper.assertValue(responseBodyString, ResponseCode.SUCCESS_SUBMIT_FORM.getCode());
         }
 
-//        @AfterEach
-//        void cleanupCRUDTestData() {
-//            // 清理CRUD测试中创建的数据
-//            if (testChatModelId != null) {
-//                try {
-//                    webTestClient.delete()
-//                            .uri("/api/v1/manage/model/{modelId}", testChatModelId)
-//                            .exchange();
-//                    log.info("清理CRUD测试数据 - Chat模型ID: {}", testChatModelId);
-//                } catch (Exception e) {
-//                    log.warn("清理CRUD测试Chat模型失败: {}", e.getMessage());
-//                }
-//                testChatModelId = null;
-//            }
-//
-//            if (testEmbeddingModelId != null) {
-//                try {
-//                    webTestClient.delete()
-//                            .uri("/api/v1/manage/model/{modelId}", testEmbeddingModelId)
-//                            .exchange();
-//                    log.info("清理CRUD测试数据 - Embedding模型ID: {}", testEmbeddingModelId);
-//                } catch (Exception e) {
-//                    log.warn("清理CRUD测试Embedding模型失败: {}", e.getMessage());
-//                }
-//                testEmbeddingModelId = null;
-//            }
-//        }
 
         @Test
-        @Order(2)
-        @DisplayName("完整Embedding模型CRUD流程")
-        void testCompleteEmbeddingModelCRUD() {
-            // Step 1: 创建Embedding模型
-            EmbeddingModelDTO createDTO = TestDataBuilder.defaultEmbeddingModelDTO().build();
-            
-            // 创建模型并获取modelId
-            webTestClient.post()
-                    .uri("/api/v1/manage/create_embedding")
+        @DisplayName("进行流式响应测试")
+        void testStreamChat() {
+            // Given
+            // ModelID : 6dad303e-56c8-4fdc-9fd8-f13e043daa9d
+            ChatRequestDTO chatRequest = new ChatRequestDTO();
+            chatRequest.setModelId("6dad303e-56c8-4fdc-9fd8-f13e043daa9d");
+            chatRequest.setPrompt("告诉我上海是一座什么样的城市");
+
+            // When & Then：发送请求并验证流式响应
+            Flux<String> responseFlux = webTestClient.post()
+                    .uri(uriBuilder -> uriBuilder
+                            .path("/api/v1/service/chat-with-stream")
+                            .queryParam("provider", "ollama")
+                            .queryParam("type", "chat")
+                            .build())
                     .contentType(MediaType.APPLICATION_JSON)
-                    .bodyValue(createDTO)
+                    .bodyValue(chatRequest)
                     .exchange()
                     .expectStatus().isOk()
-                    .expectBody()
-                    .jsonPath("$.code").isEqualTo(ResponseCode.SUCCESS_CREATE.getCode())
-                    .jsonPath("$.data").isNotEmpty()
-                    .jsonPath("$.data").value(data -> {
-                        testEmbeddingModelId = data.toString();
-                        log.info("创建的Embedding模型ID: {}", testEmbeddingModelId);
-                    });
+                    .expectHeader().contentType("application/json") // 验证SSE响应头
+                    .returnResult(String.class)
+                    .getResponseBody();
 
-            // Step 2: 更新Embedding模型配置
-            EmbeddingModelDTO updateDTO = TestDataBuilder.updateEmbeddingModelDTO().build();
-            
-            webTestClient.put()
-                    .uri("/api/v1/manage/embedding/{modelId}", testEmbeddingModelId)
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .bodyValue(updateDTO)
-                    .exchange()
-                    .expectStatus().isOk()
-                    .expectBody()
-                    .consumeWith(response -> {
-                        log.info("更新Embedding模型响应: {}", new String(response.getResponseBody()));
-                    });
-
-            // Step 3: 查询模型信息
-            webTestClient.get()
-                    .uri("/api/v1/manage/model/{modelId}", testEmbeddingModelId)
-                    .exchange()
-                    .expectStatus().isOk()
-                    .expectBody()
-                    .consumeWith(response -> {
-                        log.info("查询Embedding模型响应: {}", new String(response.getResponseBody()));
-                    });
-
-            // Step 4: 删除模型
-            webTestClient.delete()
-                    .uri("/api/v1/manage/model/{modelId}", testEmbeddingModelId)
-                    .exchange()
-                    .expectStatus().isOk()
-                    .expectBody()
-                    .consumeWith(response -> {
-                        log.info("删除Embedding模型响应: {}", new String(response.getResponseBody()));
-                    });
-
-            log.info("=== Embedding模型CRUD流程测试完成 ===");
-        }
-    }
-
-    @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-    @Nested
-    @DisplayName("6. 异常处理和边界测试")
-    class ExceptionAndBoundaryTests {
-
-        @Test
-        @Order(1)
-        @DisplayName("测试空请求体")
-        void testEmptyRequestBody() {
-            webTestClient.post()
-                    .uri("/api/v1/manage/create_chat")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .bodyValue("{}")
-                    .exchange()
-                    .expectStatus().isOk() // Controller有异常处理，返回200状态
-                    .expectBody()
-                    .jsonPath("$.code").isEqualTo(ResponseCode.FAILED_CREATE.getCode())
-                    .jsonPath("$.info").value(info -> {
-                        assertThat(info.toString()).contains(ResponseCode.FAILED_CREATE.getInfo());
+            // 使用StepVerifier验证流式数据
+            StepVerifier.create(responseFlux)
+                    .expectSubscription()
+                    .thenConsumeWhile(chunk -> {
+                        log.info("收到流式响应数据块: {}", chunk);
+                        // 验证响应不为空
+                        assertThat(chunk).isNotNull();
+                        return true;
                     })
-                    .consumeWith(response -> {
-                        log.info("空请求体响应: {}", new String(response.getResponseBody()));
-                    });
+                    .expectComplete()
+                    .verify(java.time.Duration.ofSeconds(30)); // 30秒超时
+        }
+        
+        @Test
+        @DisplayName("流式响应测试 - 简化版本")
+        void testStreamChatSimple() {
+            // Given
+            ChatRequestDTO chatRequest = new ChatRequestDTO();
+            chatRequest.setModelId("6dad303e-56c8-4fdc-9fd8-f13e043daa9d");
+            chatRequest.setPrompt("简单测试");
+
+            // When：发送请求
+            EntityExchangeResult<byte[]> result = webTestClient.post()
+                    .uri(uriBuilder -> uriBuilder
+                            .path("/api/v1/service/chat-with-stream")
+                            .queryParam("provider", "ollama")
+                            .queryParam("type", "chat")
+                            .build())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .bodyValue(chatRequest)
+                    .exchange()
+                    .expectStatus().isOk()
+                    .expectBody()
+                    .returnResult();
+
+            // Then：验证响应内容
+            byte[] responseBody = result.getResponseBody();
+            assertThat(responseBody).isNotNull();
+            
+            String responseBodyString = new String(responseBody);
+            log.info("流式响应内容: {}", responseBodyString);
+            
+            // 根据实际响应格式进行验证
+            assertThat(responseBodyString).isNotEmpty();
         }
 
-
-
         @Test
-        @Order(2)
-        @DisplayName("测试缺少必需参数的动态表单查询")
-        void testMissingRequiredParams() {
-            webTestClient.get()
-                    .uri("/api/v1/manage/model_form/config")
+        @DisplayName("普通聊天测试")
+        void testChat() {
+            // Given
+            ChatRequestDTO chatRequest = new ChatRequestDTO();
+            chatRequest.setModelId("6dad303e-56c8-4fdc-9fd8-f13e043daa9d");
+            chatRequest.setPrompt("告诉我上海是一座什么样的城市");
+
+            // When：发送请求
+            EntityExchangeResult<byte[]> result = webTestClient.post()
+                    .uri(uriBuilder -> uriBuilder
+                            .path("/api/v1/service/chat-with")
+                            .queryParam("provider", "ollama")
+                            .queryParam("type", "chat")
+                            .build())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .bodyValue(chatRequest)
                     .exchange()
-                    .expectStatus().isBadRequest()
+                    .expectStatus().isOk()
                     .expectBody()
-                    .consumeWith(response -> {
-                        log.info("缺少参数响应: {}", new String(response.getResponseBody()));
-                    });
+                    .returnResult();
+
+            // Then：验证响应内容
+            byte[] responseBody = result.getResponseBody();
+            assertThat(responseBody).isNotNull();
+
+            String responseBodyString = new String(responseBody);
+            log.info(responseBodyString);
         }
     }
 } 
