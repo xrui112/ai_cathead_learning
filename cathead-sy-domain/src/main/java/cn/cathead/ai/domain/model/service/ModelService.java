@@ -28,7 +28,6 @@ import org.springframework.ai.embedding.EmbeddingRequest;
 import org.springframework.ai.embedding.EmbeddingResponse;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.util.MimeTypeUtils;
-import org.springframework.web.multipart.MultipartFile;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 
@@ -36,7 +35,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.ArrayList;
-import java.util.stream.Collectors;
 
 
 @Service
@@ -47,7 +45,7 @@ public class ModelService implements IModelService {
     private Map<String, IModelProvider> modelProviderMap = new ConcurrentHashMap<>();
 
     @Resource
-    private IModelRepository iModelRepository;
+    private IModelRepository modelRepository;
 
     // 使用接口来管理模型Bean
     @Resource
@@ -105,38 +103,41 @@ public class ModelService implements IModelService {
     private Flux<ChatResponse> generateStreamWithImage(ChatModel chatModel, ChatRequestDTO request) {
         try {
             log.info("调用带图片的流式聊天接口");
-
-            // 处理图片
-            byte[] imageBytes = request.getImage();
-            if (imageBytes == null || imageBytes.length == 0) {
-                log.warn("图片文件为空，降级为普通文本流式聊天");
-                throw new Exception("图片为空");
-            }
-
-            // 创建 Resource 和 Media 对象
-            ByteArrayResource imageResource = new ByteArrayResource(imageBytes);
-            Media media = new Media(
-                    MimeTypeUtils.IMAGE_JPEG,
-                    imageResource
-            );
-            log.info(String.valueOf(media));
-
-            String defaultPrompt = "请分析这张图片";
-            UserMessage userMessage = UserMessage.builder()
-                    .text(request.getPrompt() != null && !request.getPrompt().trim().isEmpty()
-                            ? request.getPrompt()
-                            : defaultPrompt)
-                    .media(media)
-                    .build();
-
-            Prompt prompt = new Prompt(userMessage);
-
+            Prompt prompt = buildPrompt(request);
             return chatModel.stream(prompt);
 
         } catch (Exception e) {
             log.error("图片流式聊天处理失败", e);
             return Flux.error(new AppException(ResponseCode.FAILED_CHAT.getCode(), "图片流式聊天处理失败: " + e.getMessage()));
         }
+    }
+
+    private Prompt buildPrompt(ChatRequestDTO request) throws Exception {
+        // 处理图片
+        byte[] imageBytes = request.getImage();
+        if (imageBytes == null || imageBytes.length == 0) {
+            log.warn("图片文件为空，降级为普通文本流式聊天");
+            throw new Exception("图片为空");
+        }
+
+        // 创建 Resource 和 Media 对象
+        ByteArrayResource imageResource = new ByteArrayResource(imageBytes);
+        Media media = new Media(
+                MimeTypeUtils.IMAGE_JPEG,
+                imageResource
+        );
+        log.info(String.valueOf(media));
+
+        String defaultPrompt = "请分析这张图片";
+        UserMessage userMessage = UserMessage.builder()
+                .text(request.getPrompt() != null && !request.getPrompt().trim().isEmpty()
+                        ? request.getPrompt()
+                        : defaultPrompt)
+                .media(media)
+                .build();
+
+        Prompt prompt = buildPrompt(request);
+        return prompt;
     }
 
     @Override
@@ -169,30 +170,7 @@ public class ModelService implements IModelService {
     private ChatResponse generateWithImage(ChatModel chatModel, ChatRequestDTO request) {
         try {
             log.info("调用带图片的流式聊天接口");
-
-            // 处理图片
-            byte[] imageBytes = request.getImage();
-            if (imageBytes == null || imageBytes.length == 0) {
-                log.warn("图片文件为空，降级为普通文本流式聊天");
-                throw new Exception("图片为空");
-            }
-
-            // 创建 Resource 和 Media 对象
-            ByteArrayResource imageResource = new ByteArrayResource(imageBytes);
-            Media media = new Media(
-                    MimeTypeUtils.IMAGE_JPEG,
-                    imageResource
-            );
-            log.info(String.valueOf(media));
-            String defaultPrompt = "请分析这张图片";
-            UserMessage userMessage = UserMessage.builder()
-                    .text(request.getPrompt() != null && !request.getPrompt().trim().isEmpty()
-                            ? request.getPrompt()
-                            : defaultPrompt)
-                    .media(media)
-                    .build();
-
-            Prompt prompt = new Prompt(userMessage);
+            Prompt prompt = buildPrompt(request);
             return chatModel.call(prompt);
         } catch (Exception e) {
             log.error("图片聊天处理失败", e);
@@ -252,14 +230,14 @@ public class ModelService implements IModelService {
         modelBeanManager.removeEmbeddingModelBean(modelId);
 
         // 2. 删除数据库记录
-        iModelRepository.deleteModelRecord(modelId);
+        modelRepository.deleteModelRecord(modelId);
 
         log.info("模型删除成功，模型ID: {}", modelId);
     }
 
     @Override
     public BaseModelEntity getModelById(String modelId) {
-        return iModelRepository.queryModelById(modelId);
+        return modelRepository.queryModelById(modelId);
     }
 
     public EmbeddingModel getLatestEmbeddingModel(String modelId) {
@@ -271,7 +249,7 @@ public class ModelService implements IModelService {
     }
 
     public String getModelVersionStatus(String modelId) {
-        BaseModelEntity dbEntity = iModelRepository.queryModelById(modelId);
+        BaseModelEntity dbEntity = modelRepository.queryModelById(modelId);
         if (dbEntity == null) {
             return String.format("模型[%s]不存在", modelId);
         }
@@ -294,7 +272,7 @@ public class ModelService implements IModelService {
     private ChatModel ensureLatestChatModel(String modelId) {
         log.debug("检查Chat模型版本，模型ID: {}", modelId);
         // 1. 从数据库获取当前版本
-        ChatModelEntity currentEntity = (ChatModelEntity) iModelRepository.queryModelById(modelId);
+        ChatModelEntity currentEntity = (ChatModelEntity) modelRepository.queryModelById(modelId);
         if (currentEntity == null) {
             log.warn("模型不存在，清理缓存，模型ID: {}", modelId);
             modelBeanManager.removeChatModelBean(modelId);
@@ -324,7 +302,7 @@ public class ModelService implements IModelService {
         log.debug("检查Embedding模型版本，模型ID: {}", modelId);
 
         // 1. 从数据库获取当前版本
-        EmbeddingModelEntity currentEntity = (EmbeddingModelEntity) iModelRepository.queryModelById(modelId);
+        EmbeddingModelEntity currentEntity = (EmbeddingModelEntity) modelRepository.queryModelById(modelId);
         if (currentEntity == null) {
             log.warn("模型不存在，清理缓存，模型ID: {}", modelId);
             modelBeanManager.removeEmbeddingModelBean(modelId);
@@ -356,7 +334,7 @@ public class ModelService implements IModelService {
         log.info("开始强制刷新模型Bean，模型ID: {}", modelId);
 
         // 1. 从数据库重新加载模型信息
-        BaseModelEntity modelEntity = iModelRepository.queryModelById(modelId);
+        BaseModelEntity modelEntity = modelRepository.queryModelById(modelId);
         if (modelEntity == null) {
             log.warn("模型不存在，无法刷新Bean，模型ID: {}", modelId);
             throw new AppException("模型不存在，无法刷新Bean，模型ID: {}", modelId);
