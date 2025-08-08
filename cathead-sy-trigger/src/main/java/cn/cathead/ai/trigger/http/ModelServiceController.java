@@ -3,7 +3,6 @@ package cn.cathead.ai.trigger.http;
 import cn.cathead.ai.domain.model.service.IModelService;
 import cn.cathead.ai.types.dto.ChatRequestDTO;
 import cn.cathead.ai.types.dto.EmbeddingRequestDTO;
-import cn.cathead.ai.types.dto.ImageChatRequestDTO;
 import cn.cathead.ai.types.enums.ResponseCode;
 import cn.cathead.ai.types.exception.AppException;
 import cn.cathead.ai.types.model.Response;
@@ -15,11 +14,9 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
 import reactor.core.publisher.Flux;
 
-import java.io.IOException;
 import java.util.List;
 
 /**
@@ -94,52 +91,8 @@ public class ModelServiceController {
         }
     }
 
-
-    @RequestMapping(value = "chat-with-image", method = RequestMethod.POST)
-    public Response<ChatResponse> chatWithImage(@RequestBody ImageChatRequestDTO imageChatRequestDto) {
-        try {
-            log.info("模型 {} 调用图片聊天请求，prompt: {}", imageChatRequestDto.getModelId(), imageChatRequestDto.getPrompt());
-
-            ChatResponse chatResponse = modelService.chatWithImage(imageChatRequestDto);
-            return new Response<>(ResponseCode.SUCCESS_CHAT.getCode(), ResponseCode.SUCCESS_CHAT.getInfo(), chatResponse);
-        } catch (AppException e) {
-            log.info("模型{} 图片聊天失败,{}", imageChatRequestDto.getModelId(), e.getInfo());
-            return new Response<>(e.getCode(), e.getInfo(), null);
-        } catch (Exception e) {
-            log.warn("模型 {} 图片聊天失败,未知错误: {}", imageChatRequestDto.getModelId(), e.getMessage());
-            return new Response<>(ResponseCode.FAILED.getCode(), ResponseCode.FAILED.getInfo(), null);
-        }
-    }
-
-
-    @RequestMapping(value = "chat-with-image-stream", method = RequestMethod.POST)
-    public Flux<ChatResponse> chatWithImageStream(@RequestBody ImageChatRequestDTO imageChatRequestDto) {
-        try {
-            log.info("模型 {} 调用图片流式聊天请求，prompt: {}", imageChatRequestDto.getModelId(), imageChatRequestDto.getPrompt());
-            return modelService.chatWithImageStream(imageChatRequestDto);
-        } catch (Exception e) {
-            log.error("模型 {} 图片流式聊天失败: {}", imageChatRequestDto.getModelId(), e.getMessage());
-            return Flux.empty();
-        }
-    }
-
-    @RequestMapping(value = "chat-with-image-text", method = RequestMethod.POST)
-    public Response<String> chatWithImageText(@RequestBody ImageChatRequestDTO imageChatRequestDto) {
-        try {
-            log.info("模型 {} 调用图片纯文本聊天请求，prompt: {}", imageChatRequestDto.getModelId(), imageChatRequestDto.getPrompt());
-            String textResponse = modelService.chatWithImageText(imageChatRequestDto);
-            return new Response<>(ResponseCode.SUCCESS_CHAT.getCode(), ResponseCode.SUCCESS_CHAT.getInfo(), textResponse);
-        } catch (AppException e) {
-            log.info("模型{} 图片聊天失败,{}", imageChatRequestDto.getModelId(), e.getInfo());
-            return new Response<>(e.getCode(), e.getInfo(), null);
-        } catch (Exception e) {
-            log.warn("模型 {} 图片聊天失败,未知错误: {}", imageChatRequestDto.getModelId(), e.getMessage());
-            return new Response<>(ResponseCode.FAILED.getCode(), ResponseCode.FAILED.getInfo(), null);
-        }
-    }
-
     /**
-     * 文本向量化接口（返回完整EmbeddingResponse）
+     * 文本向量化接口
      */
     @RequestMapping(value = "embed-text", method = RequestMethod.POST)
     public Response<EmbeddingResponse> embedText(@RequestBody EmbeddingRequestDTO embeddingRequestDto) {
@@ -152,42 +105,6 @@ public class ModelServiceController {
             return new Response<>(e.getCode(), e.getInfo(), null);
         } catch (Exception e) {
             log.warn("模型 {} 文本向量化失败,未知错误: {}", embeddingRequestDto.getModelId(), e.getMessage());
-            return new Response<>(ResponseCode.FAILED.getCode(), ResponseCode.FAILED.getInfo(), null);
-        }
-    }
-
-    /**
-     * 文本向量化接口（返回向量数组）
-     */
-    @RequestMapping(value = "embed-text-vectors", method = RequestMethod.POST)
-    public Response<List<float[]>> embedTextVectors(@RequestBody EmbeddingRequestDTO embeddingRequestDto) {
-        try {
-            log.info("模型 {} 调用文本向量数组请求", embeddingRequestDto.getModelId());
-            List<float[]> vectors = modelService.embedTextVectors(embeddingRequestDto);
-            return new Response<>(ResponseCode.SUCCESS_EMBEDDING.getCode(), "文本向量化成功", vectors);
-        } catch (AppException e) {
-            log.info("模型{} 文本向量化失败,{}", embeddingRequestDto.getModelId(), e.getInfo());
-            return new Response<>(e.getCode(), e.getInfo(), null);
-        } catch (Exception e) {
-            log.warn("模型 {} 文本向量化失败,未知错误: {}", embeddingRequestDto.getModelId(), e.getMessage());
-            return new Response<>(ResponseCode.FAILED.getCode(), ResponseCode.FAILED.getInfo(), null);
-        }
-    }
-
-    /**
-     * 单个文本向量化接口（返回单个向量）
-     */
-    @RequestMapping(value = "embed-single-text", method = RequestMethod.POST)
-    public Response<float[]> embedSingleTextVector(@RequestBody EmbeddingRequestDTO embeddingRequestDto) {
-        try {
-            log.info("模型 {} 调用单个文本向量请求", embeddingRequestDto.getModelId());
-            float[] vector = modelService.embedSingleTextVector(embeddingRequestDto);
-            return new Response<>(ResponseCode.SUCCESS_EMBEDDING.getCode(), "单个文本向量化成功", vector);
-        } catch (AppException e) {
-            log.info("模型{} 单个文本向量化失败,{}", embeddingRequestDto.getModelId(), e.getInfo());
-            return new Response<>(e.getCode(), e.getInfo(), null);
-        } catch (Exception e) {
-            log.warn("模型 {} 单个文本向量化失败,未知错误: {}", embeddingRequestDto.getModelId(), e.getMessage());
             return new Response<>(ResponseCode.FAILED.getCode(), ResponseCode.FAILED.getInfo(), null);
         }
     }

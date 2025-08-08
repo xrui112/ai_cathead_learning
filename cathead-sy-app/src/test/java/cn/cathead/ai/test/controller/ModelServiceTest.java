@@ -92,7 +92,7 @@ class ModelServiceTest {
                     .uri(uriBuilder -> uriBuilder
                             .path("/api/v1/manage/model-form/submit")
                             .queryParam("provider", "openai")
-                            .queryParam("type", "chat")
+                            .queryParam("type", "embedding")
                             .build())
                     .contentType(MediaType.APPLICATION_JSON)
                     .bodyValue(formData)

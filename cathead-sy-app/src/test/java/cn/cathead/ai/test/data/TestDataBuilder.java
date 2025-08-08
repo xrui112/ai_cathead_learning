@@ -92,7 +92,8 @@ public class TestDataBuilder {
      */
     public static Map<String, Object> defaultFormData() {
         Map<String, Object> formData = new HashMap<>();
-        formData.put("modelName", "qwen3:32b");
+        //nomic-embed-text
+        formData.put("modelName", "nomic-embed-text");
         formData.put("temperature", 0.7);
         formData.put("url", "http://localhost:11434");
         formData.put("key","");

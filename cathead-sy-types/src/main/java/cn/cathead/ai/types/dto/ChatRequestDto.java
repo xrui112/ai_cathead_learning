@@ -3,6 +3,7 @@ package cn.cathead.ai.types.dto;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.Serializable;
 
@@ -17,6 +18,12 @@ public class ChatRequestDTO implements Serializable {
 
     private Boolean stream;
 
-    private Boolean OnlyText;
+    private Boolean onlyText;
+
+    private Boolean withImage;
+
+    private byte[] image;
+
+    private String imageDescription;
 
 } 
