@@ -62,7 +62,9 @@ public enum ResponseCode {
     SUCCESS_CHAT("0027","聊天调用成功"),
     FAILED_CHAT("0028","聊天调用失败"),
 
-
+    //embedding
+    SUCCESS_EMBEDDING("0029","向量化调用成功"),
+    FAILED_EMBEDDING("0030","向量化调用失败"),
 
 
 

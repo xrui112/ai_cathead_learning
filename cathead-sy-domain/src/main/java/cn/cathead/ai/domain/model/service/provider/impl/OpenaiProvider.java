@@ -87,6 +87,12 @@ public class OpenaiProvider implements IModelProvider {
         OpenAiEmbeddingOptions.Builder optionsBuilder = OpenAiEmbeddingOptions.builder()
                 .model(embeddingModelEntity.getModelName());
 
+        // 设置维度（如果指定了）
+        if (embeddingModelEntity.getDimensions() != null && embeddingModelEntity.getDimensions() > 0) {
+            optionsBuilder.dimensions(embeddingModelEntity.getDimensions());
+            log.info("OpenAI Embedding模型设置维度: {}", embeddingModelEntity.getDimensions());
+        }
+
         // 处理动态属性
         if (embeddingModelEntity.getDynamicProperties() != null && !embeddingModelEntity.getDynamicProperties().isEmpty()) {
             applyEmbeddingDynamicProperties(optionsBuilder, embeddingModelEntity.getDynamicProperties());

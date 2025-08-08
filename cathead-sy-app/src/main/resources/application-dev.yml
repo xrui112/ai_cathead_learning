@@ -2,6 +2,8 @@ server:
   port: 8090
 
 spring:
+  main:
+    web-application-type: reactive
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://127.0.0.1:13306/ai_learning?useUnicode=true&characterEncoding=utf8&autoReconnect=true&zeroDateTimeBehavior=convertToNull&serverTimezone=UTC&useSSL=true

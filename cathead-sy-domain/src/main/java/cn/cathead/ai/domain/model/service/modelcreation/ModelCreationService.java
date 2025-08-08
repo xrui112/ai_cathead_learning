@@ -78,6 +78,7 @@ public class ModelCreationService implements IModelCreationService {
                 .type(embeddingModelDTO.getType())
                 .embeddingFormat(embeddingModelDTO.getEmbeddingFormat())
                 .numPredict(embeddingModelDTO.getNumPredict())
+                .dimensions(embeddingModelDTO.getDimensions())
                 .build();
 
         // 1. 创建模型实例

@@ -1,7 +1,5 @@
 package cn.cathead.ai.domain.model.service;
-import cn.cathead.ai.types.dto.ChatModelDTO;
 import cn.cathead.ai.types.dto.ChatRequestDTO;
-import cn.cathead.ai.types.dto.EmbeddingModelDTO;
 import cn.cathead.ai.domain.model.model.entity.ChatModelEntity;
 import cn.cathead.ai.domain.model.model.entity.EmbeddingModelEntity;
 import cn.cathead.ai.domain.model.model.entity.BaseModelEntity;
@@ -14,20 +12,31 @@ import cn.cathead.ai.domain.model.service.modelcreation.IModelCreationService;
 import cn.cathead.ai.domain.model.service.provider.IModelProvider;
 import cn.cathead.ai.domain.model.service.update.impl.ChatModelUpdateService;
 import cn.cathead.ai.domain.model.service.update.impl.EmbeddingModelUpdateService;
+import cn.cathead.ai.types.dto.ImageChatRequestDTO;
+import cn.cathead.ai.types.dto.EmbeddingRequestDTO;
 import cn.cathead.ai.types.enums.ResponseCode;
 import cn.cathead.ai.types.exception.AppException;
-import cn.cathead.ai.types.model.Response;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.prompt.Prompt;
+import org.springframework.ai.chat.messages.UserMessage;
+import org.springframework.ai.content.Media;
 import org.springframework.ai.embedding.EmbeddingModel;
+import org.springframework.ai.embedding.EmbeddingRequest;
+import org.springframework.ai.embedding.EmbeddingResponse;
+import org.springframework.ai.ollama.api.OllamaModel;
+import org.springframework.util.MimeTypeUtils;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.ArrayList;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -113,17 +122,107 @@ public class ModelService implements IModelService {
     }
 
 
-    //todo 两个冗余接口 可以靠表单传入formdata 进行更新 考虑删除吧
     @Override
-    public void updateChatModelConfig(String modelId, ChatModelDTO chatModelDTO) {
-        chatModelUpdateService.updateModel(modelId, chatModelDTO);
+    public ChatResponse chatWithImage(ImageChatRequestDTO imageChatRequestDto) {
+        log.info("调用图片聊天接口，模型ID: {}", imageChatRequestDto.getModelId());
+
+        // 确保获取最新的ChatModel
+        ChatModel chatModel = ensureLatestChatModel(imageChatRequestDto.getModelId());
+
+        if (chatModel != null) {
+            return generateWithImage(chatModel, imageChatRequestDto);
+        } else {
+            throw new AppException(ResponseCode.FAILED_CHAT.getCode(), ResponseCode.FAILED_CHAT.getInfo());
+        }
     }
 
-    //todo
     @Override
-    public void updateEmbeddingModelConfig(String modelId, EmbeddingModelDTO embeddingModelDTO) {
-        embeddingModelUpdateService.updateModel(modelId, embeddingModelDTO);
+    public Flux<ChatResponse> chatWithImageStream(ImageChatRequestDTO imageChatRequestDto) {
+        log.info("调用图片聊天流式接口，模型ID: {}", imageChatRequestDto.getModelId());
+
+        // 确保获取最新的ChatModel
+        ChatModel chatModel = ensureLatestChatModel(imageChatRequestDto.getModelId());
+
+        if (chatModel != null) {
+            return generateStreamWithImage(chatModel, imageChatRequestDto);
+        }
+        log.error("未找到模型，模型ID: {}", imageChatRequestDto.getModelId());
+        return Flux.empty();
     }
+
+
+    private ChatResponse generateWithImage(ChatModel chatModel, ImageChatRequestDTO request) {
+        try {
+            log.info("调用带图片的聊天接口");
+
+            // 处理图片
+            MultipartFile imageFile = request.getImage();
+            if (imageFile == null || imageFile.isEmpty()) {
+                log.warn("图片文件为空，降级为普通文本聊天");
+                return generate(chatModel, request.getPrompt());
+            }
+
+            // 创建Media对象
+            Media media = new Media(MimeTypeUtils.parseMimeType(imageFile.getContentType()),
+                                   imageFile.getResource());
+            String defaultPrompt="请分析这张图片";
+
+
+
+            UserMessage userMessage=UserMessage.builder()
+                    .text(request.getPrompt()!= null && !request.getPrompt().trim().isEmpty()?request.getPrompt():defaultPrompt)
+                    .media(media)
+                    .build();
+            Prompt prompt = new Prompt(userMessage);
+            return chatModel.call(prompt);
+        } catch (Exception e) {
+            log.error("图片聊天处理失败", e);
+            throw new AppException(ResponseCode.FAILED_CHAT.getCode(), "图片聊天处理失败: " + e.getMessage());
+        }
+    }
+
+
+    private Flux<ChatResponse> generateStreamWithImage(ChatModel chatModel, ImageChatRequestDTO request) {
+        try {
+            log.info("调用带图片的流式聊天接口");
+
+            // 处理图片
+            MultipartFile imageFile = request.getImage();
+            if (imageFile == null || imageFile.isEmpty()) {
+                log.warn("图片文件为空，降级为普通文本流式聊天");
+                return generateStream(chatModel,request.getPrompt());
+            }
+            // 创建Media对象
+            Media media = new Media(MimeTypeUtils.parseMimeType(imageFile.getContentType()),
+                                   imageFile.getResource());
+            String defaultPrompt="请分析这张图片";
+
+            UserMessage userMessage=UserMessage.builder()
+                    .text(request.getPrompt()!= null && !request.getPrompt().trim().isEmpty()?request.getPrompt():defaultPrompt)
+                    .media(media)
+                    .build();
+            Prompt prompt = new Prompt(userMessage);
+            return chatModel.stream(prompt);
+        } catch (Exception e) {
+            log.error("图片流式聊天处理失败", e);
+            return Flux.error(new AppException(ResponseCode.FAILED_CHAT.getCode(), "图片流式聊天处理失败: " + e.getMessage()));
+        }
+    }
+
+
+    @Override
+    public String chatWithImageText(ImageChatRequestDTO imageChatRequestDto) {
+        ChatResponse response = chatWithImage(imageChatRequestDto);
+        return extractTextFromResponse(response);
+    }
+
+    private String extractTextFromResponse(ChatResponse response) {
+        if (response == null || response.getResult() == null || response.getResult().getOutput() == null) {
+            return "";
+        }
+        return response.getResult().getOutput().getText();
+    }
+
 
     @Override
     public void deleteModel(String modelId) {
@@ -296,4 +395,65 @@ public class ModelService implements IModelService {
         embeddingModelUpdateService.updateModelByFormData(modelId, provider, formData);
     }
 
+    @Override
+    public EmbeddingResponse embedText(EmbeddingRequestDTO embeddingRequestDto) {
+        log.info("调用文本向量化接口，模型ID: {}", embeddingRequestDto.getModelId());
+
+        // 确保获取最新的EmbeddingModel
+        EmbeddingModel embeddingModel = ensureLatestEmbeddingModel(embeddingRequestDto.getModelId());
+
+        if (embeddingModel != null) {
+            return generateEmbedding(embeddingModel, embeddingRequestDto);
+        } else {
+            throw new AppException(ResponseCode.FAILED_EMBEDDING.getCode(), "获取Embedding模型失败");
+        }
+    }
+
+    @Override
+    public List<float[]> embedTextVectors(EmbeddingRequestDTO embeddingRequestDto) {
+        EmbeddingResponse response = embedText(embeddingRequestDto);
+        return response.getResults().stream()
+                .map(embedding -> embedding.getOutput())
+                .collect(Collectors.toList());
+
+    }
+
+    @Override
+    public float[] embedSingleTextVector(EmbeddingRequestDTO embeddingRequestDto) {
+        EmbeddingResponse response = embedText(embeddingRequestDto);
+        if (response.getResults().isEmpty()) {
+            throw new AppException(ResponseCode.FAILED_EMBEDDING.getCode(), "向量化结果为空");
+        }
+        return response.getResults().get(0).getOutput();
+    }
+
+    /**
+     * 生成文本向量化
+     */
+    private EmbeddingResponse generateEmbedding(EmbeddingModel embeddingModel, EmbeddingRequestDTO request) {
+        try {
+            log.info("调用文本向量化处理");
+            
+            List<String> textsToEmbed = new ArrayList<>();
+            
+            // 处理输入文本
+            if (request.getText() != null && !request.getText().trim().isEmpty()) {
+                textsToEmbed.add(request.getText());
+            }
+            
+            if (request.getTexts() != null && !request.getTexts().isEmpty()) {
+                textsToEmbed.addAll(request.getTexts());
+            }
+            
+            if (textsToEmbed.isEmpty()) {
+                throw new AppException(ResponseCode.FAILED_EMBEDDING.getCode(), "没有提供要向量化的文本");
+            }
+            // 创建EmbeddingRequest，使用模型创建时已配置的维度信息
+            EmbeddingRequest embeddingRequest = new EmbeddingRequest(textsToEmbed, null);
+            return embeddingModel.call(embeddingRequest);
+        } catch (Exception e) {
+            log.error("文本向量化处理失败", e);
+            throw new AppException(ResponseCode.FAILED_EMBEDDING.getCode(), "文本向量化处理失败: " + e.getMessage());
+        }
+    }
 }

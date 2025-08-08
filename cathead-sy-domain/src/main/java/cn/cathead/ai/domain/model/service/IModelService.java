@@ -4,15 +4,16 @@ package cn.cathead.ai.domain.model.service;
 import cn.cathead.ai.domain.model.model.entity.BaseModelEntity;
 import cn.cathead.ai.domain.model.model.entity.FormConfiguration;
 import cn.cathead.ai.domain.model.model.entity.ValidationResult;
-import cn.cathead.ai.types.dto.ChatModelDTO;
 import cn.cathead.ai.types.dto.ChatRequestDTO;
-import cn.cathead.ai.types.dto.EmbeddingModelDTO;
-import cn.cathead.ai.types.model.Response;
+import cn.cathead.ai.types.dto.EmbeddingRequestDTO;
+import cn.cathead.ai.types.dto.ImageChatRequestDTO;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.embedding.EmbeddingModel;
+import org.springframework.ai.embedding.EmbeddingResponse;
 import reactor.core.publisher.Flux;
 
+import java.util.List;
 import java.util.Map;
 
 public interface IModelService {
@@ -21,9 +22,6 @@ public interface IModelService {
 
     public Flux<ChatResponse> chatWithStream(ChatRequestDTO chatRequestDto);
 
-    public void updateChatModelConfig(String modelId, ChatModelDTO chatModelDTO);
-
-    public void updateEmbeddingModelConfig(String modelId, EmbeddingModelDTO embeddingModelDTO);
     
     /**
      * 使用formData更新Chat模型配置
@@ -92,4 +90,49 @@ public interface IModelService {
      * @return 普通调用chat
      */
     ChatResponse chatWith(ChatRequestDTO chatRequestDto);
+
+    /**
+     * 图片聊天接口（非流式）
+     * @param imageChatRequestDto 包含图片和文字prompt的请求
+     * @return ChatResponse 聊天响应
+     */
+    ChatResponse chatWithImage(ImageChatRequestDTO imageChatRequestDto);
+
+    /**
+     * 图片聊天接口（流式）
+     * @param imageChatRequestDto 包含图片和文字prompt的请求
+     * @return Flux<ChatResponse> 流式聊天响应
+     */
+    Flux<ChatResponse> chatWithImageStream(ImageChatRequestDTO imageChatRequestDto);
+
+
+    /**
+     * 图片聊天接口（返回纯文本）
+     * @param imageChatRequestDto 包含图片和文字prompt的请求
+     * @return String 纯文本响应
+     */
+    String chatWithImageText(ImageChatRequestDTO imageChatRequestDto);
+
+    /**
+     * 文本向量化接口（返回完整EmbeddingResponse）
+     * @param embeddingRequestDto 向量化请求
+     * @return EmbeddingResponse 完整的向量化响应
+     */
+    EmbeddingResponse embedText(EmbeddingRequestDTO embeddingRequestDto);
+
+    /**
+     * 文本向量化接口（返回向量数组）
+     *
+     * @param embeddingRequestDto 向量化请求
+     * @return List<List < Double>> 向量数组
+     */
+    List<float[]> embedTextVectors(EmbeddingRequestDTO embeddingRequestDto);
+
+    /**
+     * 单个文本向量化接口（返回单个向量）
+     * @param embeddingRequestDto 向量化请求
+     * @return List<Double> 单个向量
+     */
+    float[] embedSingleTextVector(EmbeddingRequestDTO embeddingRequestDto);
+
 }

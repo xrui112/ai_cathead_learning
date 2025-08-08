@@ -13,6 +13,7 @@ import org.springframework.ai.ollama.OllamaEmbeddingModel;
 import org.springframework.ai.ollama.api.OllamaApi;
 import org.springframework.ai.ollama.api.OllamaOptions;
 import org.springframework.ai.ollama.management.ModelManagementOptions;
+import org.springframework.ai.openai.OpenAiEmbeddingOptions;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
@@ -79,6 +80,7 @@ public class OllamaProvider implements IModelProvider {
                 .build(); // Ollama 也不需要 key
 
 
+
         OllamaOptions.Builder optionsBuilder = OllamaOptions.builder()
                 .model(embeddingModelEntity.getModelName())
                 .format(embeddingModelEntity.getEmbeddingFormat() == null
@@ -87,6 +89,11 @@ public class OllamaProvider implements IModelProvider {
                 .numPredict(embeddingModelEntity.getNumPredict() == null
                         ? Integer.valueOf(ModelPropertyVo.NUMPREDICT.getDefaultValue())
                         : embeddingModelEntity.getNumPredict());
+
+        // Ollama的嵌入模型维度由模型本身决定，但可以记录用户指定的维度信息
+        if (embeddingModelEntity.getDimensions() != null && embeddingModelEntity.getDimensions() > 0) {
+            log.info("Ollama Embedding模型指定维度: {}（注意：Ollama维度由模型本身决定）", embeddingModelEntity.getDimensions());
+        }
 
         // 处理动态属性
         if (embeddingModelEntity.getDynamicProperties() != null && !embeddingModelEntity.getDynamicProperties().isEmpty()) {

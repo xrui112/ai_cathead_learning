@@ -14,4 +14,9 @@ import lombok.experimental.SuperBuilder;
 public class EmbeddingModelDTO extends BaseModelDTO {
     private String embeddingFormat;
     private Integer numPredict;
+    
+    /**
+     * 向量维度（某些模型支持设置）
+     */
+    private Integer dimensions;
 }

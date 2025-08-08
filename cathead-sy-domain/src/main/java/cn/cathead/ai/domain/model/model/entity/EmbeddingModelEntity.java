@@ -14,6 +14,11 @@ public class EmbeddingModelEntity extends BaseModelEntity {
 
     private Integer numPredict;
     
+    /**
+     * 向量维度（某些模型支持设置）
+     */
+    private Integer dimensions;
+    
     // 动态属性，存储模型的扩展参数
     private Map<String, Object> dynamicProperties;
 }

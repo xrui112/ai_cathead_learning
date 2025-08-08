@@ -102,7 +102,7 @@ form-configurations:
         type: "SELECT"
         required: true
         defaultValue: "gpt-3.5-turbo"
-        options: ["gpt-3.5-turbo", "gpt-4", "gpt-4-turbo", "gpt-4o"]
+#        options: ["gpt-3.5-turbo", "gpt-4", "gpt-4-turbo", "gpt-4o", "qwen3:32b"]
 
       - name: "url"
         label: "服务地址"
@@ -115,7 +115,7 @@ form-configurations:
       - name: "key"
         label: "API密钥"
         type: "PASSWORD"
-        required: true
+        required: false
         validation:
           pattern: "^sk-.+"
           minLength: 20
@@ -237,7 +237,7 @@ form-configurations:
         type: "SELECT"
         required: true
         defaultValue: "text-embedding-ada-002"
-        options: ["text-embedding-ada-002", "text-embedding-3-small", "text-embedding-3-large"]
+#        options: ["text-embedding-ada-002", "text-embedding-3-small", "text-embedding-3-large"]
 
       - name: "url"
         label: "服务地址"
@@ -250,7 +250,7 @@ form-configurations:
       - name: "key"
         label: "API密钥"
         type: "PASSWORD"
-        required: true
+        required: false
         validation:
           pattern: "^sk-.+"
           minLength: 20
