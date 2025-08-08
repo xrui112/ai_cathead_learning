@@ -22,8 +22,8 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(
-    classes = Application.class,
-    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT
+        classes = Application.class,
+        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT
 )
 @ActiveProfiles("dev") // 使用开发环境配置
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
@@ -46,7 +46,7 @@ class ModelServiceTest {
         webTestClient = webTestClient.mutate()
                 .responseTimeout(java.time.Duration.ofSeconds(30))
                 .build();
-        
+
         log.info("=== 开始执行测试方法 ===");
     }
 

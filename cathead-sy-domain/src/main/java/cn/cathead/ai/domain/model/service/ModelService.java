@@ -1,4 +1,5 @@
 package cn.cathead.ai.domain.model.service;
+
 import cn.cathead.ai.types.dto.ChatRequestDTO;
 import cn.cathead.ai.domain.model.model.entity.ChatModelEntity;
 import cn.cathead.ai.domain.model.model.entity.EmbeddingModelEntity;
@@ -55,52 +56,52 @@ public class ModelService implements IModelService {
     // 动态表单服务
     @Resource
     private IDynamicForm dynamicForm;
-    
+
     // 模型创建服务
     @Resource
     private IModelCreationService modelCreationService;
-    
+
     // 模型更新服务
     @Resource
     private ChatModelUpdateService chatModelUpdateService;
-    
+
     @Resource
     private EmbeddingModelUpdateService embeddingModelUpdateService;
 
 
     /**
-     *  对应使用chatModel
+     * 对应使用chatModel
+     *
      * @param chatRequestDto
-     * @return
-     *
-     * 需要注意的是,调用该接口之前,已经默认已经createModel 处理过了
-     *
+     * @return 需要注意的是, 调用该接口之前, 已经默认已经createModel 处理过了
      */
     @Override
     public Flux<ChatResponse> chatWithStream(ChatRequestDTO chatRequestDto) {
         // !!!!!!先检查并确保缓存是最新版本 所有的model使用 都要先ensureLatestChatModel检查version
         ChatModel chatModel = ensureLatestChatModel(chatRequestDto.getModelId());
-        if(null==chatModel){
+        if (null == chatModel) {
             log.error("未找到模型，模型ID: {}", chatRequestDto.getModelId());
             return Flux.empty();
         }
 
-        return generateStream(chatModel,chatRequestDto);
+        return generateStream(chatModel, chatRequestDto);
 
     }
-    public Flux<ChatResponse> generateStream(ChatModel chatModel,ChatRequestDTO chatRequestDto) {
+
+    public Flux<ChatResponse> generateStream(ChatModel chatModel, ChatRequestDTO chatRequestDto) {
         log.info("调用流式接口");
         boolean withImage = Boolean.TRUE.equals(chatRequestDto.getWithImage());
-        String message= chatRequestDto.getPrompt();
-        if (!withImage){
+        String message = chatRequestDto.getPrompt();
+        if (!withImage) {
             return chatModel.stream(
                     new Prompt(
                             message
                     )
             );
         }
-        return  generateStreamWithImage(chatModel,chatRequestDto);
+        return generateStreamWithImage(chatModel, chatRequestDto);
     }
+
     private Flux<ChatResponse> generateStreamWithImage(ChatModel chatModel, ChatRequestDTO request) {
         try {
             log.info("调用带图片的流式聊天接口");
@@ -145,23 +146,24 @@ public class ModelService implements IModelService {
 
         if (chatModel != null) {
             return generate(chatModel, chatRequestDto);
-        }else {
-            throw new AppException(ResponseCode.FAILED_CHAT.getCode(),ResponseCode.FAILED_CHAT.getInfo());
+        } else {
+            throw new AppException(ResponseCode.FAILED_CHAT.getCode(), ResponseCode.FAILED_CHAT.getInfo());
         }
 
     }
-    public ChatResponse generate(ChatModel chatModel,ChatRequestDTO chatRequestDTO) {
+
+    public ChatResponse generate(ChatModel chatModel, ChatRequestDTO chatRequestDTO) {
         log.info("调用普通聊天接口");
         Boolean withImage = Boolean.TRUE.equals(chatRequestDTO.getWithImage());
-        String message= chatRequestDTO.getPrompt();
-        if (!withImage){
+        String message = chatRequestDTO.getPrompt();
+        if (!withImage) {
             return chatModel.call(
                     new Prompt(
                             message
                     )
             );
         }
-        return  generateWithImage(chatModel,chatRequestDTO);
+        return generateWithImage(chatModel, chatRequestDTO);
     }
 
     private ChatResponse generateWithImage(ChatModel chatModel, ChatRequestDTO request) {
@@ -241,18 +243,17 @@ public class ModelService implements IModelService {
     }
 
 
-
     @Override
     public void deleteModel(String modelId) {
         log.info("开始删除模型，模型ID: {}", modelId);
-        
+
         // 1. 从ModelBeanManager中移除
         modelBeanManager.removeChatModelBean(modelId);
         modelBeanManager.removeEmbeddingModelBean(modelId);
-        
+
         // 2. 删除数据库记录
         iModelRepository.deleteModelRecord(modelId);
-        
+
         log.info("模型删除成功，模型ID: {}", modelId);
     }
 
@@ -274,18 +275,18 @@ public class ModelService implements IModelService {
         if (dbEntity == null) {
             return String.format("模型[%s]不存在", modelId);
         }
-        
+
         Long cachedVersion = modelBeanManager.getCachedModelVersion(modelId);
         Long dbVersion = dbEntity.getVersion();
-        
+
         if (cachedVersion == null) {
             return String.format("模型[%s]：缓存中不存在，数据库版本: %d", modelId, dbVersion);
         }
-        
+
         if (cachedVersion.equals(dbVersion)) {
             return String.format("模型[%s]：缓存版本与数据库版本一致，版本: %d", modelId, dbVersion);
         } else {
-            return String.format("模型[%s]：缓存版本过期，缓存版本: %d，数据库版本: %d", 
+            return String.format("模型[%s]：缓存版本过期，缓存版本: %d，数据库版本: %d",
                     modelId, cachedVersion, dbVersion);
         }
     }
@@ -353,29 +354,29 @@ public class ModelService implements IModelService {
     @Override
     public void refreshModelCache(String modelId) {
         log.info("开始强制刷新模型Bean，模型ID: {}", modelId);
-        
+
         // 1. 从数据库重新加载模型信息
         BaseModelEntity modelEntity = iModelRepository.queryModelById(modelId);
         if (modelEntity == null) {
             log.warn("模型不存在，无法刷新Bean，模型ID: {}", modelId);
             throw new AppException("模型不存在，无法刷新Bean，模型ID: {}", modelId);
         }
-        
+
         // 2. 强制更新缓存，不进行版本检查
-        log.info("强制刷新模型缓存，模型ID: {}, 数据库版本: {}, 原缓存版本: {}", 
+        log.info("强制刷新模型缓存，模型ID: {}, 数据库版本: {}, 原缓存版本: {}",
                 modelId, modelEntity.getVersion(), modelBeanManager.getCachedModelVersion(modelId));
-        
+
         // 3. 使用ModelBeanManager重新创建模型Bean
         if ("chat".equalsIgnoreCase(modelEntity.getType())) {
             ChatModel chatModel = modelBeanManager.updateChatModelBean(modelId, (ChatModelEntity) modelEntity);
             if (chatModel != null) {
-                log.info("Chat模型Bean强制刷新成功，模型ID: {}, 新版本: {}", 
+                log.info("Chat模型Bean强制刷新成功，模型ID: {}, 新版本: {}",
                         modelId, modelEntity.getVersion());
             }
         } else if ("embedding".equalsIgnoreCase(modelEntity.getType())) {
             EmbeddingModel embeddingModel = modelBeanManager.updateEmbeddingModelBean(modelId, (EmbeddingModelEntity) modelEntity);
             if (embeddingModel != null) {
-                log.info("Embedding模型Bean强制刷新成功，模型ID: {}, 新版本: {}", 
+                log.info("Embedding模型Bean强制刷新成功，模型ID: {}, 新版本: {}",
                         modelId, modelEntity.getVersion());
             }
         } else {
@@ -388,19 +389,18 @@ public class ModelService implements IModelService {
         log.info("获取动态表单配置，provider: {}, type: {}", provider, type);
         return dynamicForm.getFormConfiguration(provider, type);
     }
-    
+
     @Override
     public ValidationResult validateFormData(String provider, String type, Map<String, Object> formData) {
         log.info("校验动态表单数据，provider: {}, type: {}", provider, type);
         return dynamicForm.validateFormData(provider, type, formData);
     }
-    
+
     @Override
     public String submitForm(String provider, String type, Map<String, Object> formData) {
         log.info("提交动态表单，provider: {}, type: {}", provider, type);
         return dynamicForm.submitForm(provider, type, formData);
     }
-
 
 
     @Override

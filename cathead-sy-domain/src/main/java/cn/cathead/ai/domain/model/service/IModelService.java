@@ -26,15 +26,17 @@ public interface IModelService {
 
     /**
      * 使用formData更新Chat模型配置
-     * @param modelId 模型ID
+     *
+     * @param modelId  模型ID
      * @param provider 提供商
      * @param formData 表单数据
      */
     public void updateChatModelConfigByFormData(String modelId, String provider, Map<String, Object> formData);
-    
+
     /**
      * 使用formData更新Embedding模型配置
-     * @param modelId 模型ID  
+     *
+     * @param modelId  模型ID
      * @param provider 提供商
      * @param formData 表单数据
      */
@@ -53,38 +55,41 @@ public interface IModelService {
 
     /**
      * 检查模型版本状态
+     *
      * @param modelId 模型ID
      * @return 版本状态信息
      */
     public String getModelVersionStatus(String modelId);
 
-    
+
     /**
      * 获取动态表单配置
+     *
      * @param provider 提供商
-     * @param type 模型类型
+     * @param type     模型类型
      * @return 表单配置
      */
     FormConfiguration getFormConfiguration(String provider, String type);
-    
+
     /**
      * 校验动态表单数据
+     *
      * @param provider 提供商
-     * @param type 模型类型
+     * @param type     模型类型
      * @param formData 表单数据
      * @return 校验结果
      */
     ValidationResult validateFormData(String provider, String type, Map<String, Object> formData);
-    
+
     /**
      * 提交动态表单并创建模型
+     *
      * @param provider 提供商
-     * @param type 模型类型
+     * @param type     模型类型
      * @param formData 表单数据
      * @return 创建结果信息
      */
     String submitForm(String provider, String type, Map<String, Object> formData);
-
 
 
 }
