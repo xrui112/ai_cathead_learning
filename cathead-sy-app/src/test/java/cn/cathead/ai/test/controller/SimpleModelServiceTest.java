@@ -163,7 +163,7 @@ class SimpleModelServiceTest {
         chatRequest.setPrompt("这张图片关于什么");
         chatRequest.setStream(false);
         chatRequest.setOnlyText(true);
-        chatRequest.setWithImage(true);
+
 
         // 加载并转为 byte[]
         InputStream inputStream = getClass().getClassLoader().getResourceAsStream("images/dog.jpg");
@@ -194,7 +194,6 @@ class SimpleModelServiceTest {
         chatRequest.setPrompt("这张图片关于什么");
         chatRequest.setStream(false);
         chatRequest.setOnlyText(false);
-        chatRequest.setWithImage(true);
 
         // 加载并转为 byte[]
         InputStream inputStream = getClass().getClassLoader().getResourceAsStream("images/dog.jpg");

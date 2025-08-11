@@ -20,8 +20,6 @@ public class ChatRequestDTO implements Serializable {
 
     private Boolean onlyText;
 
-    private Boolean withImage;
-
     private byte[] image;
 
     private String imageDescription;

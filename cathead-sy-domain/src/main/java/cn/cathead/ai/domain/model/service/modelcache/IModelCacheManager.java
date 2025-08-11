@@ -129,4 +129,23 @@ public interface IModelCacheManager {
      */
     Long getCachedModelVersion(String modelId);
 
+    /**
+     * 确保获取最新的Chat模型，如果版本过期则自动更新
+     * @param modelId 模型ID
+     * @return Chat模型实例，如果不存在返回null
+     */
+    ChatModel ensureLatestChatModel(String modelId);
+
+    /**
+     * 确保获取最新的Embedding模型，如果版本过期则自动更新
+     * @param modelId 模型ID
+     * @return Embedding模型实例，如果不存在返回null
+     */
+    EmbeddingModel ensureLatestEmbeddingModel(String modelId);
+
+    /**
+     * 强制刷新模型缓存
+     * @param modelId 模型ID
+     */
+    void refreshModelCache(String modelId);
 } 

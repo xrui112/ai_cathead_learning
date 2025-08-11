@@ -6,6 +6,8 @@ import cn.cathead.ai.domain.model.model.entity.ModelWrapper;
 import cn.cathead.ai.domain.model.repository.IModelRepository;
 import cn.cathead.ai.domain.model.service.modelcache.IModelCacheManager;
 import cn.cathead.ai.domain.model.service.provider.IModelProvider;
+import cn.cathead.ai.types.enums.ResponseCode;
+import cn.cathead.ai.types.exception.AppException;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheStats;
 import jakarta.annotation.Resource;
@@ -18,6 +20,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import cn.cathead.ai.domain.model.model.entity.BaseModelEntity;
 
 /**
  * 模型Bean配置类
@@ -259,5 +262,102 @@ public class ModelCacheManager implements IModelCacheManager {
         }
         
         return null; // 缓存中不存在
+    }
+
+    @Override
+    public ChatModel ensureLatestChatModel(String modelId) {
+        log.debug("检查Chat模型版本，模型ID: {}", modelId);
+        
+        // 1. 从数据库获取当前版本
+        ChatModelEntity currentEntity = (ChatModelEntity) iModelRepository.queryModelById(modelId);
+        if (currentEntity == null) {
+            log.warn("模型不存在，清理缓存，模型ID: {}", modelId);
+            removeChatModelBean(modelId);
+            throw new AppException(ResponseCode.MODEL_NOT_FOUND.getCode(),ResponseCode.MODEL_NOT_FOUND.getInfo());
+        }
+        
+        // 2. 获取缓存版本信息
+        Long cachedVersion = getCachedModelVersion(modelId);
+        
+        // 3. 判断是否需要更新缓存
+        if (cachedVersion == null) {
+            // 缓存中没有，直接创建
+            log.debug("缓存中没有模型，创建新模型，模型ID: {}", modelId);
+            return updateChatModelBean(modelId, currentEntity);
+        } else if (cachedVersion.equals(currentEntity.getVersion())) {
+            // 版本一致，直接返回
+            log.debug("缓存版本是最新的，直接返回缓存模型，模型ID: {}", modelId);
+            return getChatModelBean(modelId);
+        } else {
+            // 版本过期，需要更新
+            log.info("缓存版本过期，更新Chat模型缓存，模型ID: {}, 数据库版本: {}, 缓存版本: {}",
+                    modelId, currentEntity.getVersion(), cachedVersion);
+            return updateChatModelBean(modelId, currentEntity);
+        }
+    }
+
+    @Override
+    public EmbeddingModel ensureLatestEmbeddingModel(String modelId) {
+        log.debug("检查Embedding模型版本，模型ID: {}", modelId);
+        
+        // 1. 从数据库获取当前版本
+        EmbeddingModelEntity currentEntity = (EmbeddingModelEntity) iModelRepository.queryModelById(modelId);
+        if (currentEntity == null) {
+            log.warn("模型不存在，清理缓存，模型ID: {}", modelId);
+            removeEmbeddingModelBean(modelId);
+            return null;
+        }
+        
+        // 2. 获取缓存版本信息
+        Long cachedVersion = getCachedModelVersion(modelId);
+        
+        // 3. 判断是否需要更新缓存
+        if (cachedVersion == null) {
+            // 缓存中没有，直接创建
+            log.debug("缓存中没有模型，创建新模型，模型ID: {}", modelId);
+            return updateEmbeddingModelBean(modelId, currentEntity);
+        } else if (cachedVersion.equals(currentEntity.getVersion())) {
+            // 版本一致，直接返回
+            log.debug("缓存版本是最新的，直接返回缓存模型，模型ID: {}", modelId);
+            return getEmbeddingModelBean(modelId);
+        } else {
+            // 版本过期，需要更新
+            log.info("缓存版本过期，更新Embedding模型缓存，模型ID: {}, 数据库版本: {}, 缓存版本: {}",
+                    modelId, currentEntity.getVersion(), cachedVersion);
+            return updateEmbeddingModelBean(modelId, currentEntity);
+        }
+    }
+
+    @Override
+    public void refreshModelCache(String modelId) {
+        log.info("开始强制刷新模型Bean，模型ID: {}", modelId);
+
+        // 1. 从数据库重新加载模型信息
+        BaseModelEntity modelEntity = iModelRepository.queryModelById(modelId);
+        if (modelEntity == null) {
+            log.warn("模型不存在，无法刷新Bean，模型ID: {}", modelId);
+            throw new RuntimeException("模型不存在，无法刷新Bean，模型ID: " + modelId);
+        }
+
+        // 2. 强制更新缓存，不进行版本检查
+        log.info("强制刷新模型缓存，模型ID: {}, 数据库版本: {}, 原缓存版本: {}",
+                modelId, modelEntity.getVersion(), getCachedModelVersion(modelId));
+
+        // 3. 使用ModelCacheManager重新创建模型Bean
+        if ("chat".equalsIgnoreCase(modelEntity.getType())) {
+            ChatModel chatModel = updateChatModelBean(modelId, (ChatModelEntity) modelEntity);
+            if (chatModel != null) {
+                log.info("Chat模型Bean强制刷新成功，模型ID: {}, 新版本: {}",
+                        modelId, modelEntity.getVersion());
+            }
+        } else if ("embedding".equalsIgnoreCase(modelEntity.getType())) {
+            EmbeddingModel embeddingModel = updateEmbeddingModelBean(modelId, (EmbeddingModelEntity) modelEntity);
+            if (embeddingModel != null) {
+                log.info("Embedding模型Bean强制刷新成功，模型ID: {}, 新版本: {}",
+                        modelId, modelEntity.getVersion());
+            }
+        } else {
+            log.warn("未知的模型类型，无法刷新，模型ID: {}, 类型: {}", modelId, modelEntity.getType());
+        }
     }
 }

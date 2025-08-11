@@ -25,7 +25,6 @@ import java.util.List;
  * base  /api/v1/service
  * /chat_with 调用chat模型
  * /embedding_with 调用embedding模型
- *
  */
 @RestController
 @RequestMapping("/api/v1/service")
@@ -41,7 +40,7 @@ public class ModelServiceController {
             boolean stream = Boolean.TRUE.equals(chatRequestDto.getStream());
             boolean onlyText = Boolean.TRUE.equals(chatRequestDto.getOnlyText());
             if (stream) {
-                if (!onlyText){
+                if (!onlyText) {
                     log.info("流式响应 非纯文本启动");
                     Flux<ServerSentEvent<ChatResponse>> sse = modelService.chatWithStream(chatRequestDto)
                             .map(resp -> ServerSentEvent.<ChatResponse>builder()
@@ -66,7 +65,7 @@ public class ModelServiceController {
                         .body(sseText);
 
             } else {
-                if(!onlyText){
+                if (!onlyText) {
                     log.info("普通响应 非纯文本启动");
                     ChatResponse response = modelService.chatWith(chatRequestDto);
                     return ResponseEntity.ok()
@@ -83,6 +82,12 @@ public class ModelServiceController {
                                 ResponseCode.SUCCESS_CHAT.getInfo(),
                                 response));
             }
+        } catch (AppException e) {
+            // 专门处理业务异常
+            log.info("聊天请求失败, 错误信息: {}", e.getInfo());
+            return ResponseEntity.ok()
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(new Response<>(e.getCode(), e.getInfo(), null));
         } catch (Exception e) {
             return ResponseEntity.ok()
                     .contentType(MediaType.APPLICATION_JSON)
