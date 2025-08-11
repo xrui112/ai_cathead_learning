@@ -81,9 +81,7 @@ public class ModelService implements IModelService {
             log.error("未找到模型，模型ID: {}", chatRequestDto.getModelId());
             return Flux.empty();
         }
-
         return generateStream(chatModel, chatRequestDto);
-
     }
 
     public Flux<ChatResponse> generateStream(ChatModel chatModel, ChatRequestDTO chatRequestDto) {
@@ -126,7 +124,6 @@ public class ModelService implements IModelService {
                 MimeTypeUtils.IMAGE_JPEG,
                 imageResource
         );
-        log.info(String.valueOf(media));
 
         String defaultPrompt = "请分析这张图片";
         UserMessage userMessage = UserMessage.builder()
@@ -136,8 +133,9 @@ public class ModelService implements IModelService {
                 .media(media)
                 .build();
 
-        Prompt prompt = buildPrompt(request);
-        return prompt;
+        return Prompt.builder()
+                .messages(userMessage)
+                .build();
     }
 
     @Override
@@ -155,7 +153,7 @@ public class ModelService implements IModelService {
 
     public ChatResponse generate(ChatModel chatModel, ChatRequestDTO chatRequestDTO) {
         log.info("调用普通聊天接口");
-        Boolean withImage = Boolean.TRUE.equals(chatRequestDTO.getWithImage());
+        boolean withImage = Boolean.TRUE.equals(chatRequestDTO.getWithImage());
         String message = chatRequestDTO.getPrompt();
         if (!withImage) {
             return chatModel.call(

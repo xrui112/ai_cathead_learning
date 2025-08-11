@@ -91,7 +91,7 @@ class ModelServiceTest {
             EntityExchangeResult<byte[]> response = webTestClient.post()
                     .uri(uriBuilder -> uriBuilder
                             .path("/api/v1/manage/model-form/submit")
-                            .queryParam("provider", "openai")
+                            .queryParam("provider", "ollama")
                             .queryParam("type", "embedding")
                             .build())
                     .contentType(MediaType.APPLICATION_JSON)
