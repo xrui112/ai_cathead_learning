@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE configuration
+  PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-config.dtd">
+<configuration>
+  <settings>
+    <!-- 以下为常用且安全的默认设置，可按需调整 -->
+    <setting name="mapUnderscoreToCamelCase" value="true"/>
+    <setting name="cacheEnabled" value="false"/>
+    <setting name="callSettersOnNulls" value="true"/>
+    <setting name="jdbcTypeForNull" value="NULL"/>
+  </settings>
+</configuration>
+
+

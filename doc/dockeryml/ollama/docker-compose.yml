@@ -1,0 +1,75 @@
+# docker-comopse -f docker-compose-environment.yml up -d
+version: '3'
+services:
+  # 对话模型
+  # ollama pull qwen3:latest
+  # 运行模型
+  # ollama run qwen3:latest
+  # 联网模型
+  # ollama pull nomic-embed-text
+  ollama:
+    image: ollama/ollama:0.5.10
+    container_name: ollama
+    restart: no
+    ports:
+      - "11434:11434"
+
+  mysql:
+    image: mysql:8.0.32
+    container_name: mysql
+    command: --default-authentication-plugin=mysql_native_password
+    restart: no
+    environment:
+      TZ: Asia/Shanghai
+      MYSQL_ROOT_PASSWORD: 123456
+    ports:
+      - "13306:3306"
+    volumes:
+      - ./mysql/sql:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: [ "CMD", "mysqladmin" ,"ping", "-h", "localhost" ]
+      interval: 5s
+      timeout: 10s
+      retries: 10
+    networks:
+      - my-network
+
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: postgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: springai
+      TZ: Asia/Shanghai
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./postgres/sql:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d springai" ]
+      interval: 5s
+      timeout: 10s
+      retries: 10
+    networks:
+      - my-network
+
+    # pgAdmin 管理工具
+  pgadmin:
+      image: dpage/pgadmin4:8.10
+      container_name: pgadmin4agent
+      restart: always
+      ports:
+        - "5050:80"
+      environment:
+        PGADMIN_DEFAULT_EMAIL: admin@qq.com
+        PGADMIN_DEFAULT_PASSWORD: admin
+      depends_on:
+        - postgres
+      networks:
+        - my-network
+
+networks:
+  my-network:
+    driver: bridge

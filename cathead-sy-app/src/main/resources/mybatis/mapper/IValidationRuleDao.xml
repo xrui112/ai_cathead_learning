@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.cathead.ai.infrastructure.persistent.dao.IValidationRuleDao">
+
+    <resultMap id="RuleMap" type="cn.cathead.ai.infrastructure.persistent.po.ModelValidationRulePO">
+        <id property="id" column="id"/>
+        <result property="providerName" column="provider_name"/>
+        <result property="modelType" column="model_type"/>
+        <result property="fieldName" column="field_name"/>
+        <result property="fieldType" column="field_type"/>
+        <result property="required" column="required"/>
+        <result property="defaultValue" column="default_value"/>
+        <result property="minValue" column="min_value"/>
+        <result property="maxValue" column="max_value"/>
+        <result property="minLength" column="min_length"/>
+        <result property="maxLength" column="max_length"/>
+        <result property="pattern" column="pattern"/>
+        <result property="enumValues" column="enum_values"/>
+        <result property="customValidator" column="custom_validator"/>
+        <result property="errorMessage" column="error_message"/>
+        <result property="fieldLabel" column="field_label"/>
+        <result property="fieldDescription" column="field_description"/>
+        <result property="placeholder" column="placeholder"/>
+        <result property="enabled" column="enabled"/>
+    </resultMap>
+
+    <select id="selectEnabledRules" resultMap="RuleMap">
+        SELECT * FROM model_validation_rule
+        WHERE provider_name = #{provider}
+          AND model_type = #{type}
+          AND enabled = TRUE
+    </select>
+
+    <select id="selectRules" resultMap="RuleMap">
+        SELECT * FROM model_validation_rule
+        WHERE provider_name = #{provider}
+          AND model_type = #{type}
+    </select>
+
+    <insert id="insertRule" parameterType="cn.cathead.ai.infrastructure.persistent.po.ModelValidationRulePO" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO model_validation_rule(
+            provider_name, model_type, field_name, field_type, required, default_value,
+            min_value, max_value, min_length, max_length, pattern, enum_values,
+            custom_validator, error_message, field_label, field_description, placeholder, enabled
+        ) VALUES (
+            #{providerName}, #{modelType}, #{fieldName}, #{fieldType}, #{required}, #{defaultValue},
+            #{minValue}, #{maxValue}, #{minLength}, #{maxLength}, #{pattern}, #{enumValues},
+            #{customValidator}, #{errorMessage}, #{fieldLabel}, #{fieldDescription}, #{placeholder}, #{enabled}
+        )
+    </insert>
+
+    <update id="updateRule" parameterType="cn.cathead.ai.infrastructure.persistent.po.ModelValidationRulePO">
+        UPDATE model_validation_rule
+        SET provider_name = #{providerName},
+            model_type = #{modelType},
+            field_name = #{fieldName},
+            field_type = #{fieldType},
+            required = #{required},
+            default_value = #{defaultValue},
+            min_value = #{minValue},
+            max_value = #{maxValue},
+            min_length = #{minLength},
+            max_length = #{maxLength},
+            pattern = #{pattern},
+            enum_values = #{enumValues},
+            custom_validator = #{customValidator},
+            error_message = #{errorMessage},
+            field_label = #{fieldLabel},
+            field_description = #{fieldDescription},
+            placeholder = #{placeholder},
+            enabled = #{enabled}
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteRule">
+        DELETE FROM model_validation_rule WHERE id = #{id}
+    </delete>
+
+</mapper>
+
+
