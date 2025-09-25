@@ -2,8 +2,9 @@ package cn.cathead.ai.test.exec;
 
 import cn.cathead.ai.Application;
 import cn.cathead.ai.domain.exec.model.entity.ExecuteCommandEntity;
-import cn.cathead.ai.domain.exec.model.entity.Emitter;
-import cn.cathead.ai.domain.exec.service.facade.AutoAgentLoopExecutor;
+import cn.cathead.ai.domain.exec.service.chain.AutoAgentLoopExecutor;
+import cn.cathead.ai.domain.model.service.ModelService;
+import cn.cathead.ai.types.dto.ChatRequestDTO;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -16,6 +17,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyEmitter;
+import java.io.IOException;
 
 @SpringBootTest(classes = Application.class)
 @ActiveProfiles("dev")
@@ -25,20 +28,26 @@ class AutoAgentLoopExecutorIT {
     @Autowired
     private AutoAgentLoopExecutor autoAgentLoopExecutor;
 
-    private static class TestEmitter implements Emitter<String> {
+    @Autowired
+    private ModelService modelService;
+    private static class TestEmitter extends ResponseBodyEmitter {
         private final List<String> events = new ArrayList<>();
         private final CountDownLatch done = new CountDownLatch(1);
 
         @Override
-        public void send(String data) {
+        public void send(Object data) throws IOException {
             synchronized (events) {
-                events.add(data);
+                events.add(data == null ? null : String.valueOf(data));
             }
+            System.out.println("[SSE] " + (data == null ? "null" : String.valueOf(data)));
+            System.out.flush();
         }
 
         @Override
         public void complete() {
             done.countDown();
+            System.out.println("[SSE] <complete>");
+            System.out.flush();
         }
 
         public boolean awaitDone(Duration timeout) throws InterruptedException {
@@ -52,6 +61,20 @@ class AutoAgentLoopExecutorIT {
         }
     }
 
+
+    @Test
+    @DisplayName("执行聊天测试")
+    void testChat() throws Exception {
+        String modelId = "7c5d376d-3bf6-41dd-a5dc-a7390ae09a18";
+        ChatRequestDTO chatRequestDTO=new ChatRequestDTO();
+        chatRequestDTO.setModelId(modelId);
+        chatRequestDTO.setPrompt("能不能测试通过啊到底");
+        chatRequestDTO.setStream(false);
+        System.out.println(modelService.chatWith(chatRequestDTO));
+
+
+
+    }
     @Test
     @DisplayName("执行一轮链路并断言结束事件")
     void testExecuteOnce() throws Exception {
@@ -63,7 +86,7 @@ class AutoAgentLoopExecutorIT {
                 .agentId("test-agent")
                 .knowledgeId("test-knowledge")
                 .maxStep(1)
-                .task("say hello")
+                .task("显示销售数据并计算平均金额")
                 .build();
 
         TestEmitter emitter = new TestEmitter();

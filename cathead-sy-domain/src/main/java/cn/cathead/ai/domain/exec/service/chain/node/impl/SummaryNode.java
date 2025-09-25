@@ -1,10 +1,10 @@
-package cn.cathead.ai.domain.exec.service.chain.factory.node.impl;
+package cn.cathead.ai.domain.exec.service.chain.node.impl;
 
 import cn.cathead.ai.domain.exec.model.entity.ExecutionRecord;
-import cn.cathead.ai.domain.exec.service.chain.factory.context.ChainContext;
-import cn.cathead.ai.domain.exec.service.chain.factory.loop.LoopChain;
+import cn.cathead.ai.domain.exec.model.entity.ChainContext;
+import cn.cathead.ai.domain.exec.service.chain.loop.LoopChain;
 import cn.cathead.ai.domain.exec.model.entity.LoopContext;
-import cn.cathead.ai.domain.exec.service.chain.factory.node.LoopNode;
+import cn.cathead.ai.domain.exec.service.chain.node.LoopNode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 

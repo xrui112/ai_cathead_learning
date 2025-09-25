@@ -1,17 +1,17 @@
-package cn.cathead.ai.domain.exec.service.facade;
+package cn.cathead.ai.domain.exec.service.chain;
 
 import cn.cathead.ai.domain.client.service.build.IClientBuilderService;
 import cn.cathead.ai.domain.exec.model.entity.AutoAgentExecuteResultEntity;
 import cn.cathead.ai.domain.exec.model.entity.ExecuteCommandEntity;
-import cn.cathead.ai.domain.exec.service.chain.factory.loop.LoopChain;
+import cn.cathead.ai.domain.exec.service.chain.loop.LoopChain;
 import cn.cathead.ai.domain.exec.service.chain.factory.ExecFactory;
 import cn.cathead.ai.domain.exec.model.entity.LoopContext;
-import cn.cathead.ai.domain.exec.service.chain.factory.context.ChainContext;
-import cn.cathead.ai.domain.exec.model.entity.Emitter;
+import cn.cathead.ai.domain.exec.model.entity.ChainContext;
 import lombok.RequiredArgsConstructor;
 import cn.cathead.ai.domain.client.service.advisor.memory.manager.tools.MemoryContextHolder;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.stereotype.Service;
+import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyEmitter;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -25,7 +25,7 @@ public class AutoAgentLoopExecutor {
     private final IClientBuilderService clientBuilderService;
     private final ExecFactory execFactory;
 
-    public void execute(ExecuteCommandEntity cmd, Emitter<String> emitter) {
+    public void execute(ExecuteCommandEntity cmd, ResponseBodyEmitter emitter) {
         ChatClient chatClient = clientBuilderService.build(cmd.getModelId());
 
         LoopContext ctx = new LoopContext();
@@ -53,7 +53,7 @@ public class AutoAgentLoopExecutor {
                     .subType("END")
                     .content("FINISH")
                     .build());
-            try { emitter.complete(); } catch (Exception ignored) {}
+        try { emitter.complete(); } catch (Exception ignored) {}
         }
     }
 }

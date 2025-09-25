@@ -34,45 +34,53 @@ public class MemoryAdvisor implements BaseAdvisor {
     private static final String ATTR_SESSION_ID = "x-session-id";
     private static final String ATTR_KNOWLEDGE_ID = "x-knowledge-id";
     private static final String ATTR_AGENT_ID = "x-agent-id";
+    private static final String ATTR_USE_STM = "x-use-stm";      // true/false，默认 true
+    private static final String ATTR_USE_LTM = "x-use-ltm";      // true/false，默认 true
+    private static final String ATTR_LTM_TOPK = "x-ltm-topk";    // int，默认 props.ltm.defaultTopK
 
     private final IMemoryManager memoryManager;
     private final MemoryProperties props;
 
     @Override
     public ChatClientRequest before(ChatClientRequest chatClientRequest, AdvisorChain advisorChain) {
-        String sessionId = getAttribute(chatClientRequest, ATTR_SESSION_ID);
-        String knowledgeId = getAttribute(chatClientRequest, ATTR_KNOWLEDGE_ID);
-        String agentId = getAttribute(chatClientRequest, ATTR_AGENT_ID);
+        Map<String, Object> context = chatClientRequest.context() == null ? Map.of() : chatClientRequest.context();
+        String sessionId = context.get(ATTR_SESSION_ID) == null ? null : String.valueOf(context.get(ATTR_SESSION_ID));
+        String knowledgeId = context.get(ATTR_KNOWLEDGE_ID) == null ? null : String.valueOf(context.get(ATTR_KNOWLEDGE_ID));
+        String agentId = context.get(ATTR_AGENT_ID) == null ? null : String.valueOf(context.get(ATTR_AGENT_ID));
         if (sessionId == null) sessionId = MemoryContextHolder.getSessionId();
         if (knowledgeId == null) knowledgeId = MemoryContextHolder.getKnowledgeId();
         if (agentId == null) agentId = MemoryContextHolder.getAgentId();
 
-        List<Message> originalPromptMessages = getPromptMessagesFromRequest(chatClientRequest);
+        List<UserMessage> originalPromptMessages = chatClientRequest.prompt().getUserMessages();
+
         String queryText = extractLastUserText(originalPromptMessages);
 
-        // 短期上下文
-        List<Message> shortTerm = sessionId == null ? List.of() : memoryManager.getContext(sessionId);
+        boolean useStm = getBoolean(context.get(ATTR_USE_STM), true);
+        boolean useLtm = getBoolean(context.get(ATTR_USE_LTM), true);
+        int topK = getInt(context.get(ATTR_LTM_TOPK), props.getLtm().getDefaultTopK());
+
+        // 短期上下文（可开关）
+        List<Message> shortTerm = (useStm && sessionId != null) ? memoryManager.getContext(sessionId) : List.of();
 
         // 长期召回（容错：embedding 调用问题不影响主链路）
-        int topK = props.getLtm().getDefaultTopK();
         List<MemoryChunk> chunks;
         try {
-            chunks = memoryManager.retrieveLongTerm(knowledgeId, agentId, queryText, topK);
+            chunks = useLtm ? memoryManager.retrieveLongTerm(knowledgeId, agentId, queryText, topK) : List.of();
         } catch (Exception e) {
             chunks = List.of();
         }
         List<Message> longTerm = new ArrayList<>();
         if (!chunks.isEmpty()) {
-            StringBuilder context = new StringBuilder();
-            context.append("[Retrieved Long-Term Memory]\n");
+            StringBuilder ltmContext = new StringBuilder();
+            ltmContext.append("[Retrieved Long-Term Memory]\n");
             for (MemoryChunk c : chunks) {
-                context.append("- ")
+                ltmContext.append("- ")
                         .append(c.getTitle() == null ? "chunk" : c.getTitle())
                         .append(": ")
                         .append(c.getSummary())
                         .append('\n');
             }
-            longTerm.add(new AssistantMessage(context.toString()));
+            longTerm.add(new AssistantMessage(ltmContext.toString()));
         }
 
         // 合并：LT + ST + 原始 prompt 消息
@@ -84,10 +92,10 @@ public class MemoryAdvisor implements BaseAdvisor {
         // 构造新的 Prompt
         Prompt newPrompt = Prompt.builder().messages(merged).build();
 
-        // 用 builder 模式返回新请求，context 为 Map
+        // 用 builder 模式返回新请求，context 透传
         return ChatClientRequest.builder()
                 .prompt(newPrompt)
-                .context(getContextMap(chatClientRequest))
+                .context(context)
                 .build();
     }
 
@@ -95,11 +103,18 @@ public class MemoryAdvisor implements BaseAdvisor {
     public ChatClientResponse after(ChatClientResponse chatClientResponse, AdvisorChain advisorChain) {
         try {
             Object req = getRequestFromResponse(chatClientResponse);
-            if (req == null) return chatClientResponse;
-            String sessionId = getAttributeFromRequestObject(req, ATTR_SESSION_ID);
+            String sessionId = MemoryContextHolder.getSessionId();
+            if (sessionId == null && req instanceof ChatClientRequest r) {
+                Map<String, Object> ctx = r.context();
+                if (ctx != null && ctx.get(ATTR_SESSION_ID) != null) {
+                    sessionId = String.valueOf(ctx.get(ATTR_SESSION_ID));
+                }
+            }
             if (sessionId == null) return chatClientResponse;
 
-            List<Message> requestMessages = getPromptMessagesFromRequestObject(req);
+            List<UserMessage> requestMessages = (req instanceof ChatClientRequest r)
+                    ? r.prompt().getUserMessages()
+                    : List.of();
             String userText = extractLastUserText(requestMessages);
             String assistantText = extractResponseText(chatClientResponse);
 
@@ -127,48 +142,8 @@ public class MemoryAdvisor implements BaseAdvisor {
 
     // -------- helper methods --------
 
-    private static String getAttribute(ChatClientRequest req, String key) {
-        try {
-            Method m = req.getClass().getMethod("getAttributes");
-            Object obj = m.invoke(req);
-            if (obj instanceof Map<?, ?> map) {
-                Object val = map.get(key);
-                return val == null ? null : String.valueOf(val);
-            }
-        } catch (Exception ignore) { }
-        return null;
-    }
-
-    @SuppressWarnings("unchecked")
-    private static Map<String, Object> getContextMap(ChatClientRequest req) {
-        try {
-            Method m = req.getClass().getMethod("getContext");
-            Object obj = m.invoke(req);
-            if (obj instanceof Map<?, ?>) {
-                return (Map<String, Object>) obj;
-            }
-        } catch (Exception ignore) { }
-        return Map.of();
-    }
-
-    @SuppressWarnings("unchecked")
-    private static List<Message> getPromptMessagesFromRequest(ChatClientRequest req) {
-        try {
-            Method mPrompt = req.getClass().getMethod("getPrompt");
-            Object prompt = mPrompt.invoke(req);
-            if (prompt != null) {
-                Method mMsgs = prompt.getClass().getMethod("getMessages");
-                Object msgs = mMsgs.invoke(prompt);
-                if (msgs instanceof List<?>) {
-                    return (List<Message>) msgs;
-                }
-            }
-        } catch (Exception ignore) { }
-        return List.of();
-    }
-
     private static Object getRequestFromResponse(ChatClientResponse resp) {
-        for (String methodName : new String[]{"getRequest", "getChatClientRequest"}) {
+        for (String methodName : new String[]{"getRequest", "getChatClientRequest", "request", "chatClientRequest"}) {
             try {
                 Method m = resp.getClass().getMethod(methodName);
                 return m.invoke(resp);
@@ -177,58 +152,95 @@ public class MemoryAdvisor implements BaseAdvisor {
         return null;
     }
 
-    @SuppressWarnings("unchecked")
-    private static List<Message> getPromptMessagesFromRequestObject(Object reqObj) {
-        try {
-            Method mPrompt = reqObj.getClass().getMethod("getPrompt");
-            Object prompt = mPrompt.invoke(reqObj);
-            if (prompt != null) {
-                Method mMsgs = prompt.getClass().getMethod("getMessages");
-                Object msgs = mMsgs.invoke(prompt);
-                if (msgs instanceof List<?>) {
-                    return (List<Message>) msgs;
-                }
-            }
-        } catch (Exception ignore) { }
-        return List.of();
-    }
-
-    private static String getAttributeFromRequestObject(Object reqObj, String key) {
-        try {
-            Method m = reqObj.getClass().getMethod("getAttributes");
-            Object obj = m.invoke(reqObj);
-            if (obj instanceof Map<?, ?> map) {
-                Object val = map.get(key);
-                return val == null ? null : String.valueOf(val);
-            }
-        } catch (Exception ignore) { }
-        return null;
-    }
-
-    private static String extractLastUserText(List<Message> messages) {
-        for (int i = messages.size() - 1; i >= 0; i--) {
-            Message m = messages.get(i);
-            if (m instanceof UserMessage) {
-                return MessageUtils.extractText(m);
-            }
-        }
-        return "";
+    private static String extractLastUserText(List<UserMessage> messages) {
+        if (messages == null || messages.isEmpty()) return "";
+        UserMessage m = messages.get(messages.size() - 1);
+        return MessageUtils.extractText(m);
     }
 
     private static String extractResponseText(ChatClientResponse resp) {
         try {
-            Method m1 = resp.getClass().getMethod("getResults");
+            Method m1 = findNoArgMethod(resp.getClass(), "getResults", "results");
+            if (m1 == null) return resp.toString();
             Object listObj = m1.invoke(resp);
             if (listObj instanceof List<?> list && !list.isEmpty()) {
                 Object first = list.get(0);
-                Method m2 = first.getClass().getMethod("getOutput");
+                Method m2 = findNoArgMethod(first.getClass(), "getOutput", "output");
+                if (m2 == null) return resp.toString();
                 Object output = m2.invoke(first);
-                Method m3 = output.getClass().getMethod("getText");
+                Method m3 = findNoArgMethod(output.getClass(), "getText", "text");
+                if (m3 == null) return resp.toString();
                 Object text = m3.invoke(output);
                 return text == null ? "" : String.valueOf(text);
             }
         } catch (Exception ignore) { }
         return resp.toString();
+    }
+
+    private static Method findNoArgMethod(Class<?> targetClass, String... candidateNames) {
+        for (String name : candidateNames) {
+            // 1) public 方法（包含父类/接口）
+            try {
+                Method m = targetClass.getMethod(name);
+                m.setAccessible(true);
+                return m;
+            } catch (NoSuchMethodException ignored) { }
+
+            // 2) 在类层次结构中找声明方法（非 public）
+            for (Class<?> c = targetClass; c != null; c = c.getSuperclass()) {
+                try {
+                    Method m = c.getDeclaredMethod(name);
+                    m.setAccessible(true);
+                    return m;
+                } catch (NoSuchMethodException ignored) { }
+            }
+
+            // 3) 在所有接口及其父接口中找声明方法
+            Method m = findInInterfaces(targetClass, name);
+            if (m != null) return m;
+        }
+        return null;
+    }
+
+    private static boolean getBoolean(Object v, boolean defaultValue) {
+        if (v == null) return defaultValue;
+        if (v instanceof Boolean b) return b;
+        String s = String.valueOf(v).trim().toLowerCase();
+        if ("true".equals(s) || "1".equals(s) || "yes".equals(s)) return true;
+        if ("false".equals(s) || "0".equals(s) || "no".equals(s)) return false;
+        return defaultValue;
+    }
+
+    private static int getInt(Object v, int defaultValue) {
+        if (v == null) return defaultValue;
+        try {
+            return Integer.parseInt(String.valueOf(v));
+        } catch (Exception ignore) {
+            return defaultValue;
+        }
+    }
+
+    private static Method findInInterfaces(Class<?> targetClass, String name) {
+        for (Class<?> itf : targetClass.getInterfaces()) {
+            try {
+                Method m = itf.getMethod(name);
+                m.setAccessible(true);
+                return m;
+            } catch (NoSuchMethodException ignored) { }
+            try {
+                Method m = itf.getDeclaredMethod(name);
+                m.setAccessible(true);
+                return m;
+            } catch (NoSuchMethodException ignored) { }
+            Method deeper = findInInterfaces(itf, name);
+            if (deeper != null) return deeper;
+        }
+        Class<?> superClass = targetClass.getSuperclass();
+        if (superClass != null) {
+            Method fromSuper = findInInterfaces(superClass, name);
+            if (fromSuper != null) return fromSuper;
+        }
+        return null;
     }
 }
 

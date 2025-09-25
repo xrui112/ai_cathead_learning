@@ -1,8 +1,6 @@
 package cn.cathead.ai.domain.exec.model.entity;
-
-import cn.cathead.ai.domain.exec.model.entity.ExecutionRecord;
-import cn.cathead.ai.domain.exec.model.entity.Emitter;
 import lombok.Data;
+import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyEmitter;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -30,7 +28,7 @@ public class LoopContext {
 
     private Map<String, Object> temp = new HashMap<>();
 
-    private Emitter<String> emitter;
+    private ResponseBodyEmitter emitter;
 }
 
 

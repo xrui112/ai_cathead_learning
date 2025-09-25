@@ -56,6 +56,23 @@ public class DefaultMemoryManager implements IMemoryManager {
     }
 
     @Override
+    public void saveShortTermMessages(String sessionId, List<Message> messages) {
+        updateMemory(sessionId, messages);
+    }
+
+    @Override
+    public void saveShortTermTextAsUser(String sessionId, String text) {
+        if (text == null || text.isBlank()) return;
+        updateMemory(sessionId, List.of(org.springframework.ai.chat.messages.UserMessage.builder().text(text).build()));
+    }
+
+    @Override
+    public void saveShortTermTextAsAssistant(String sessionId, String text) {
+        if (text == null || text.isBlank()) return;
+        updateMemory(sessionId, List.of(new org.springframework.ai.chat.messages.AssistantMessage(text)));
+    }
+
+    @Override
     public void clear(String sessionId) {
         shortTermRepo.clear(resolveNamespace(sessionId));
     }

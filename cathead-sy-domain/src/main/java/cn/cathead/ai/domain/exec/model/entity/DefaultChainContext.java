@@ -1,6 +1,6 @@
 
 
-package cn.cathead.ai.domain.exec.service.chain.factory.context;
+package cn.cathead.ai.domain.exec.model.entity;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

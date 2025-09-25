@@ -1,19 +1,19 @@
-package cn.cathead.ai.domain.exec.service.chain.factory.node.impl;
+package cn.cathead.ai.domain.exec.service.chain.node.impl;
 
 import cn.cathead.ai.domain.exec.model.entity.ExecutionRecord;
-import cn.cathead.ai.domain.exec.service.chain.factory.context.ChainContext;
-import cn.cathead.ai.domain.exec.service.chain.factory.loop.LoopChain;
+import cn.cathead.ai.domain.exec.model.entity.ChainContext;
+import cn.cathead.ai.domain.exec.service.chain.loop.LoopChain;
 import cn.cathead.ai.domain.exec.model.entity.LoopContext;
-import cn.cathead.ai.domain.exec.service.chain.factory.node.LoopNode;
+import cn.cathead.ai.domain.exec.service.chain.node.LoopNode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 
 import static cn.cathead.ai.domain.exec.service.chain.tools.SseUtils.sendSection;
 
 @Slf4j
-public class ExecutorNode implements LoopNode {
+public class AnalyzerNode implements LoopNode {
 
-    public static final String NAME = "Executor";
+    public static final String NAME = "Analyzer";
 
     @Override
     public String getName() {
@@ -40,29 +40,43 @@ public class ExecutorNode implements LoopNode {
                 .call()
                 .content();
 
-        ctx.setExecutionResult(content);
-        sendSection(ctx, NAME, "EXECUTION", content);
+        ctx.setAnalysisResult(content);
+        sendSection(ctx, NAME, "ANALYSIS", content);
+
+        if (isCompletedByText(content)) {
+            ctx.setCompleted(true);
+        }
 
         ensureHistory(ctx);
-        chain.jumpTo(SupervisorNode.NAME, ctx, chainContext);
+        chain.jumpTo(ctx.isCompleted() || ctx.getStep() > ctx.getMaxStep() ? SummaryNode.NAME : ExecutorNode.NAME, ctx, chainContext);
     }
 
     private String buildPrompt(LoopContext ctx) {
         StringBuilder sb = new StringBuilder();
-        sb.append("[Analysis]\n").append(ctx.getAnalysisResult()).append('\n');
-        sb.append("请基于分析制定并执行一步可操作的行动，输出：目标/过程/结果/质量检查。");
+        sb.append("[Task]\n").append(ctx.getCurrentTask()).append('\n');
+        sb.append("[History]\n");
+        ctx.getExecutionHistory().forEach(r -> sb.append("- step ").append(r.getStep()).append(": ")
+                .append(r.getExecutionResult() == null ? "" : r.getExecutionResult()).append('\n'));
+        sb.append("请分析任务完成路径，给出完成度评估(0-100%)与任务状态(COMPLETED/ONGOING)，并提供执行策略。");
         return sb.toString();
+    }
+
+    private boolean isCompletedByText(String text) {
+        if (text == null) return false;
+        String t = text.toUpperCase();
+        return t.contains("任务状态: COMPLETED") || t.contains("完成度评估: 100%")
+                || t.contains("TASK STATUS: COMPLETED") || t.contains("COMPLETION: 100%");
     }
 
     private void ensureHistory(LoopContext ctx) {
         if (ctx.getExecutionHistory().isEmpty() || ctx.getExecutionHistory().get(ctx.getExecutionHistory().size() - 1).getStep() != ctx.getStep()) {
             ctx.getExecutionHistory().add(ExecutionRecord.builder()
                     .step(ctx.getStep())
-                    .executionResult(ctx.getExecutionResult())
+                    .analysisResult(ctx.getAnalysisResult())
                     .build());
         } else {
             ctx.getExecutionHistory().get(ctx.getExecutionHistory().size() - 1)
-                    .setExecutionResult(ctx.getExecutionResult());
+                    .setAnalysisResult(ctx.getAnalysisResult());
         }
     }
 }

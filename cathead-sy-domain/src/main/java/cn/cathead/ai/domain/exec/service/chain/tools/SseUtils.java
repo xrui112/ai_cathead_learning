@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.SneakyThrows;
+import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyEmitter;
 
 import java.time.Instant;
 import java.util.HashMap;
@@ -19,7 +20,7 @@ public final class SseUtils {
 
 	@SneakyThrows
 	public static void sendSseResult(LoopContext ctx, AutoAgentExecuteResultEntity result) {
-		cn.cathead.ai.domain.exec.model.entity.Emitter<String> emitter = ctx.getEmitter();
+		ResponseBodyEmitter emitter = ctx.getEmitter();
 		if (emitter == null) return;
 		AutoAgentExecuteResultEntity payload = result.getTimestamp() == null
 				? AutoAgentExecuteResultEntity.builder()

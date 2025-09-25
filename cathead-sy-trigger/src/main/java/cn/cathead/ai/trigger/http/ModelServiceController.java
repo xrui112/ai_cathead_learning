@@ -12,12 +12,9 @@ import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.embedding.EmbeddingResponse;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.web.bind.annotation.*;
-
-import reactor.core.publisher.Flux;
-
-import java.util.List;
+import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyEmitter;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * 模型相关的服务接口
@@ -40,32 +37,38 @@ public class ModelServiceController {
             boolean stream = Boolean.TRUE.equals(chatRequestDto.getStream());
             boolean onlyText = Boolean.TRUE.equals(chatRequestDto.getOnlyText());
             if (stream) {
-                if (!onlyText) {
-                    log.info("流式响应 非纯文本启动");
-                    Flux<ServerSentEvent<ChatResponse>> sse = modelService.chatWithStream(chatRequestDto)
-                            .map(resp -> ServerSentEvent.<ChatResponse>builder()
-                                    .id(String.valueOf(System.currentTimeMillis()))
-                                    .event("message")
-                                    .data(resp)
-                                    .build());
+                log.info("流式响应 启动, onlyText={}", onlyText);
+                ResponseBodyEmitter emitter = new ResponseBodyEmitter(Long.MAX_VALUE);
+                ObjectMapper objectMapper = new ObjectMapper();
 
-
-                    return ResponseEntity.ok()
-
-                            .contentType(MediaType.TEXT_EVENT_STREAM)
-                            .body(sse);
-                }
-                log.info("流式响应 纯文本启动");
-                Flux<ServerSentEvent<String>> sseText = modelService.chatWithStream(chatRequestDto)
-                        .map(resp -> ServerSentEvent.<String>builder()
-                                .id(String.valueOf(System.currentTimeMillis()))
-                                .event("message")
-                                .data(resp.getResults().get(0).getOutput().getText())
-                                .build());
+                modelService.chatWithStream(chatRequestDto)
+                        .subscribe(resp -> {
+                                    try {
+                                        String idLine = "id: " + System.currentTimeMillis() + "\n";
+                                        String eventLine = "event: message\n";
+                                        String dataPayload;
+                                        if (onlyText) {
+                                            String text = resp.getResults().get(0).getOutput().getText();
+                                            dataPayload = text == null ? "" : text;
+                                        } else {
+                                            dataPayload = objectMapper.writeValueAsString(resp);
+                                        }
+                                        String frame = idLine + eventLine + "data: " + dataPayload + "\n\n";
+                                        emitter.send(frame);
+                                    } catch (Exception ex) {
+                                        try { emitter.completeWithError(ex); } catch (Exception ignore) {}
+                                    }
+                                },
+                                e -> {
+                                    try { emitter.completeWithError(e); } catch (Exception ignore) {}
+                                },
+                                () -> {
+                                    try { emitter.complete(); } catch (Exception ignore) {}
+                                });
 
                 return ResponseEntity.ok()
                         .contentType(MediaType.TEXT_EVENT_STREAM)
-                         .body(sseText);
+                        .body(emitter);
 
             } else {
                 if (!onlyText) {

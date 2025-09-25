@@ -1,7 +1,7 @@
 package cn.cathead.ai.domain.exec.service.chain.factory;
 
-import cn.cathead.ai.domain.exec.service.chain.factory.context.ChainContext;
-import cn.cathead.ai.domain.exec.service.chain.factory.loop.LoopChain;
+import cn.cathead.ai.domain.exec.model.entity.ChainContext;
+import cn.cathead.ai.domain.exec.service.chain.loop.LoopChain;
 import org.springframework.ai.chat.client.ChatClient;
 
 import java.util.Map;

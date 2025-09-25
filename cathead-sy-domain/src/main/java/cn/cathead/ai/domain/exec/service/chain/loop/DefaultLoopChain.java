@@ -1,8 +1,8 @@
-package cn.cathead.ai.domain.exec.service.chain.factory.loop;
+package cn.cathead.ai.domain.exec.service.chain.loop;
 
-import cn.cathead.ai.domain.exec.service.chain.factory.context.ChainContext;
+import cn.cathead.ai.domain.exec.model.entity.ChainContext;
 import cn.cathead.ai.domain.exec.model.entity.LoopContext;
-import cn.cathead.ai.domain.exec.service.chain.factory.node.LoopNode;
+import cn.cathead.ai.domain.exec.service.chain.node.LoopNode;
 
 import java.util.HashMap;
 import java.util.List;

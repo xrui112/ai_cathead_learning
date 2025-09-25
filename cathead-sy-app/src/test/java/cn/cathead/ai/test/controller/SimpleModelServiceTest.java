@@ -69,7 +69,7 @@ class SimpleModelServiceTest {
     @DisplayName("测试流式纯文本聊天接口")
     void testChatStream() {
         ChatRequestDTO chatRequest = new ChatRequestDTO();
-        chatRequest.setModelId("6dad303e-56c8-4fdc-9fd8-f13e043daa9d");
+        chatRequest.setModelId("7c5d376d-3bf6-41dd-a5dc-a7390ae09a18");
         chatRequest.setPrompt("告诉我上海是一座什么样的城市");
         chatRequest.setStream(true);
         chatRequest.setOnlyText(true);
