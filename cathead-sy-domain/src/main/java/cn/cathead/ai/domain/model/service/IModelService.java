@@ -1,9 +1,5 @@
 package cn.cathead.ai.domain.model.service;
-
-
 import cn.cathead.ai.domain.model.model.entity.BaseModelEntity;
-import cn.cathead.ai.domain.model.model.entity.FormConfiguration;
-import cn.cathead.ai.domain.model.model.entity.ValidationResult;
 import cn.cathead.ai.types.dto.ChatRequestDTO;
 import cn.cathead.ai.types.dto.EmbeddingRequestDTO;
 import org.springframework.ai.chat.model.ChatModel;
@@ -11,9 +7,9 @@ import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.embedding.EmbeddingResponse;
 import reactor.core.publisher.Flux;
+import cn.cathead.ai.types.dto.ChatModelDTO;
+import cn.cathead.ai.types.dto.EmbeddingModelDTO;
 
-import java.util.List;
-import java.util.Map;
 
 public interface IModelService {
 
@@ -24,23 +20,7 @@ public interface IModelService {
     EmbeddingResponse embedText(EmbeddingRequestDTO embeddingRequestDto);
 
 
-    /**
-     * 使用formData更新Chat模型配置
-     *
-     * @param modelId  模型ID
-     * @param provider 提供商
-     * @param formData 表单数据
-     */
-    public void updateChatModelConfigByFormData(String modelId, String provider, Map<String, Object> formData);
-
-    /**
-     * 使用formData更新Embedding模型配置
-     *
-     * @param modelId  模型ID
-     * @param provider 提供商
-     * @param formData 表单数据
-     */
-    public void updateEmbeddingModelConfigByFormData(String modelId, String provider, Map<String, Object> formData);
+    // 表单更新相关接口已移除，统一由业务服务自行使用规则校验
 
     public void deleteModel(String modelId);
 
@@ -62,34 +42,17 @@ public interface IModelService {
     public String getModelVersionStatus(String modelId);
 
 
-    /**
-     * 获取动态表单配置
-     *
-     * @param provider 提供商
-     * @param type     模型类型
-     * @return 表单配置
-     */
-    FormConfiguration getFormConfiguration(String provider, String type);
+    // 动态表单相关接口已移除
+
 
     /**
-     * 校验动态表单数据
-     *
-     * @param provider 提供商
-     * @param type     模型类型
-     * @param formData 表单数据
-     * @return 校验结果
+     * 统一创建Chat模型（对外门面）。
      */
-    ValidationResult validateFormData(String provider, String type, Map<String, Object> formData);
+    String createChatModel(ChatModelDTO chatModelDTO);
 
     /**
-     * 提交动态表单并创建模型
-     *
-     * @param provider 提供商
-     * @param type     模型类型
-     * @param formData 表单数据
-     * @return 创建结果信息
+     * 统一创建Embedding模型（对外门面）。
      */
-    String submitForm(String provider, String type, Map<String, Object> formData);
-
+    String createEmbeddingModel(EmbeddingModelDTO embeddingModelDTO);
 
 }

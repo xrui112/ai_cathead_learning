@@ -94,11 +94,12 @@ public class TestDataBuilder {
         Map<String, Object> formData = new HashMap<>();
         //nomic-embed-text
         formData.put("modelName", "nomic-embed-text");
-        formData.put("temperature", 0.7);
+//        formData.put("temperature", 0.7);
         formData.put("url", "http://localhost:11434");
         formData.put("key","");
-        formData.put("topP", 0.9);
-        formData.put("maxTokens", 2048);
+//        formData.put("dimensions",1024);
+//        formData.put("topP", 0.9);
+//        formData.put("maxTokens", 4096);
         return formData;
     }
 

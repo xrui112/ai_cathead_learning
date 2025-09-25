@@ -48,7 +48,10 @@ public class ModelServiceController {
                                     .event("message")
                                     .data(resp)
                                     .build());
+
+
                     return ResponseEntity.ok()
+
                             .contentType(MediaType.TEXT_EVENT_STREAM)
                             .body(sse);
                 }
@@ -62,7 +65,7 @@ public class ModelServiceController {
 
                 return ResponseEntity.ok()
                         .contentType(MediaType.TEXT_EVENT_STREAM)
-                        .body(sseText);
+                         .body(sseText);
 
             } else {
                 if (!onlyText) {

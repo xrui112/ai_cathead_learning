@@ -128,6 +128,13 @@
                 <artifactId>spring-boot-starter-webflux</artifactId>
                 <version>3.2.3</version>
             </dependency>
+
+            <dependency>
+                <groupId>org.springframework.ai</groupId>
+                <artifactId>spring-ai-commons</artifactId>
+                <version>${spring-ai.version}</version>
+            </dependency>
+
         </dependencies>
     </dependencyManagement>
     <build>

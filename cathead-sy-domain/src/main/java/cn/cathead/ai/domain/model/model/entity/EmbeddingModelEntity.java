@@ -18,6 +18,11 @@ public class EmbeddingModelEntity extends BaseModelEntity {
      * 向量维度（某些模型支持设置）
      */
     private Integer dimensions;
+    private Integer maxInputLength;
+    private Boolean supportBatch;
+    private Integer maxBatchSize;
+    private Boolean normalize;
+    private String similarityMetric;
     
     // 动态属性，存储模型的扩展参数
     private Map<String, Object> dynamicProperties;

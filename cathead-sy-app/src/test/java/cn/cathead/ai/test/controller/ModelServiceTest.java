@@ -91,6 +91,37 @@ class ModelServiceTest {
             EntityExchangeResult<byte[]> response = webTestClient.post()
                     .uri(uriBuilder -> uriBuilder
                             .path("/api/v1/manage/model-form/submit")
+                            .queryParam("provider", "openai")
+                            .queryParam("type", "chat")
+                            .build())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .bodyValue(formData)
+                    .exchange()
+                    .expectStatus().isOk()
+                    .expectBody()
+                    .returnResult();  // 保存响应结果用于后续验证
+
+            // Then：验证响应内容
+            byte[] responseBody = response.getResponseBody();
+            String responseBodyString = new String(responseBody);
+
+            log.info("提交表单成功响应: {}", responseBodyString);
+
+            // JSON 验证
+            JsonPathExpectationsHelper jsonPathHelper = new JsonPathExpectationsHelper("$.code");
+            jsonPathHelper.assertValue(responseBodyString, ResponseCode.SUCCESS_SUBMIT_FORM.getCode());
+        }
+
+        @Test
+        @DisplayName("提交表单数据 - 成功流程")
+        void testSubmitFormSuccess2() {
+            // Given
+            Map<String, Object> formData = TestDataBuilder.defaultFormData();
+
+            // When：发送请求
+            EntityExchangeResult<byte[]> response = webTestClient.post()
+                    .uri(uriBuilder -> uriBuilder
+                            .path("/api/v1/manage/model-form/submit")
                             .queryParam("provider", "ollama")
                             .queryParam("type", "embedding")
                             .build())

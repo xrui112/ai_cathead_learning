@@ -3,7 +3,6 @@ package cn.cathead.ai.infrastructure.persistent.po;
 
 import lombok.Data;
 
-import java.util.Map;
 
 @Data
 public class ModelConfig {
@@ -22,10 +21,20 @@ public class ModelConfig {
     private String stop;
     private Float frequencyPenalty;
     private Float presencePenalty;
+    private Integer maxContextLength;
+    private Boolean supportStream;
+    private Boolean supportFunctionCall;
+    private String systemPrompt;
 
     // Embedding 字段
     private String embeddingFormat;
     private Integer numPredict;
+    private Integer dimensions;
+    private Integer maxInputLength;
+    private Boolean supportBatch;
+    private Integer maxBatchSize;
+    private Boolean normalize;
+    private String similarityMetric;
 
     // 动态属性字段（存储JSON格式的扩展参数）
     private String dynamicProperties;

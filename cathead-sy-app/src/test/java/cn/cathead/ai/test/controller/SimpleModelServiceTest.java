@@ -219,7 +219,7 @@ class SimpleModelServiceTest {
     void testEmbedTextSingle() {
 
 
-        EmbeddingRequestDTO request = new EmbeddingRequestDTO("1dd5dc71-2bc3-43ad-9dcb-bfe88582a46f",
+        EmbeddingRequestDTO request = new EmbeddingRequestDTO("a0ab2e45-948e-46ec-95b2-7c7da0281daf",
                 "测试测试测试测试");
 
         webTestClient.mutate().responseTimeout(java.time.Duration.ofSeconds(60)).build()

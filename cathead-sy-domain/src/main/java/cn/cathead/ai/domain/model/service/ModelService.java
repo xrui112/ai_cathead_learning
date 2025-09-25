@@ -2,19 +2,15 @@ package cn.cathead.ai.domain.model.service;
 
 import cn.cathead.ai.types.dto.ChatRequestDTO;
 import cn.cathead.ai.domain.model.model.entity.BaseModelEntity;
-import cn.cathead.ai.domain.model.model.entity.FormConfiguration;
-import cn.cathead.ai.domain.model.model.entity.ValidationResult;
 import cn.cathead.ai.domain.model.repository.IModelRepository;
-import cn.cathead.ai.domain.model.service.chat.IChatService;
-import cn.cathead.ai.domain.model.service.embedding.IEmbeddingService;
-import cn.cathead.ai.domain.model.service.form.IDynamicForm;
-import cn.cathead.ai.domain.model.service.modelcache.IModelCacheManager;
-import cn.cathead.ai.domain.model.service.modelcreation.IModelCreationService;
-import cn.cathead.ai.domain.model.service.update.impl.ChatModelUpdateService;
-import cn.cathead.ai.domain.model.service.update.impl.EmbeddingModelUpdateService;
+import cn.cathead.ai.domain.model.service.runtime.chat.IChatService;
+import cn.cathead.ai.domain.model.service.runtime.embedding.IEmbeddingService;
+import cn.cathead.ai.domain.model.service.registry.modelcache.IModelCacheManager;
+import cn.cathead.ai.domain.model.service.registry.IModelProviderService;
+import cn.cathead.ai.domain.model.service.registry.modelcreation.IModelCreationService;
+import cn.cathead.ai.domain.model.service.registry.update.impl.ChatModelUpdateService;
+import cn.cathead.ai.domain.model.service.registry.update.impl.EmbeddingModelUpdateService;
 import cn.cathead.ai.types.dto.EmbeddingRequestDTO;
-import cn.cathead.ai.types.enums.ResponseCode;
-import cn.cathead.ai.types.exception.AppException;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.model.ChatModel;
@@ -23,8 +19,9 @@ import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.embedding.EmbeddingResponse;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
+import cn.cathead.ai.types.dto.ChatModelDTO;
+import cn.cathead.ai.types.dto.EmbeddingModelDTO;
 
-import java.util.Map;
 
 @Service
 @Slf4j
@@ -37,9 +34,10 @@ public class ModelService implements IModelService {
     @Resource
     private IModelCacheManager modelBeanManager;
 
-    // 动态表单服务
+    // 模型提供者服务
     @Resource
-    private IDynamicForm dynamicForm;
+    private IModelProviderService modelProviderService;
+
 
     // 模型创建服务
     @Resource
@@ -104,11 +102,11 @@ public class ModelService implements IModelService {
     }
 
     public EmbeddingModel getLatestEmbeddingModel(String modelId) {
-        return modelBeanManager.ensureLatestEmbeddingModel(modelId);
+        return modelProviderService.getEmbeddingModel(modelId);
     }
 
     public ChatModel getLatestChatModel(String modelId) {
-        return modelBeanManager.ensureLatestChatModel(modelId);
+        return modelProviderService.getChatModel(modelId);
     }
 
     public String getModelVersionStatus(String modelId) {
@@ -137,31 +135,14 @@ public class ModelService implements IModelService {
         modelBeanManager.refreshModelCache(modelId);
     }
 
+    // 统一入口：委托给 ModelCreationService
     @Override
-    public FormConfiguration getFormConfiguration(String provider, String type) {
-        log.info("获取动态表单配置，provider: {}, type: {}", provider, type);
-        return dynamicForm.getFormConfiguration(provider, type);
+    public String createChatModel(ChatModelDTO chatModelDTO) {
+        return modelCreationService.createChatModel(chatModelDTO);
     }
 
     @Override
-    public ValidationResult validateFormData(String provider, String type, Map<String, Object> formData) {
-        log.info("校验动态表单数据，provider: {}, type: {}", provider, type);
-        return dynamicForm.validateFormData(provider, type, formData);
-    }
-
-    @Override
-    public String submitForm(String provider, String type, Map<String, Object> formData) {
-        log.info("提交动态表单，provider: {}, type: {}", provider, type);
-        return dynamicForm.submitForm(provider, type, formData);
-    }
-
-    @Override
-    public void updateChatModelConfigByFormData(String modelId, String provider, Map<String, Object> formData) {
-        chatModelUpdateService.updateModelByFormData(modelId, provider, formData);
-    }
-
-    @Override
-    public void updateEmbeddingModelConfigByFormData(String modelId, String provider, Map<String, Object> formData) {
-        embeddingModelUpdateService.updateModelByFormData(modelId, provider, formData);
+    public String createEmbeddingModel(EmbeddingModelDTO embeddingModelDTO) {
+        return modelCreationService.createEmbeddingModel(embeddingModelDTO);
     }
 }

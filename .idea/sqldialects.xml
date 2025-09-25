@@ -2,5 +2,6 @@
 <project version="4">
   <component name="SqlDialectMappings">
     <file url="file://$PROJECT_DIR$/doc/dockeryml/ollama/mysql/sql/origin.sql" dialect="MySQL" />
+    <file url="file://$PROJECT_DIR$/doc/dockeryml/ollama/pgvector/sql/pg.sql" dialect="PostgreSQL" />
   </component>
 </project>

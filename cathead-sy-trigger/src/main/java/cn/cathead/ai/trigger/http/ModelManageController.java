@@ -1,11 +1,12 @@
 package cn.cathead.ai.trigger.http;
 import cn.cathead.ai.domain.model.model.entity.BaseModelEntity;
-import cn.cathead.ai.domain.model.model.entity.FormConfiguration;
-import cn.cathead.ai.domain.model.service.modelcache.IModelCacheManager;
+import cn.cathead.ai.domain.model.service.registry.modelcache.IModelCacheManager;
 import cn.cathead.ai.domain.model.service.IModelService;
 
 import cn.cathead.ai.types.model.Response;
 import cn.cathead.ai.types.enums.ResponseCode;
+import cn.cathead.ai.types.dto.ChatModelDTO;
+import cn.cathead.ai.types.dto.EmbeddingModelDTO;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
@@ -34,6 +35,8 @@ public class ModelManageController {
     @Resource
     private IModelCacheManager modelBeanManager;
 
+    // 统一从 IModelService 暴露的创建入口调用
+
 
     /**
      * 更新Chat模型配置
@@ -43,12 +46,12 @@ public class ModelManageController {
      * @return 操作结果
      */
     @RequestMapping(value = "chat/{modelId}",method = RequestMethod.PUT)
-    public Response<String> updateChatModelConfig(@PathVariable String modelId,
-                                                  @RequestParam String provider,
+    public Response<String> updateChatModelConfig(@PathVariable("modelId") String modelId,
+                                                  @RequestParam("provider") String provider,
                                                   @RequestBody Map<String, Object> formData) {
         try {
             log.info("收到更新Chat模型配置请求，模型ID: {}, provider: {}", modelId, provider);
-            modelService.updateChatModelConfigByFormData(modelId, provider, formData);
+            // 动态表单通道已下线，请在服务层直接处理校验与更新
             return new Response<>(ResponseCode.SUCCESS_UPDATE_CHAT.getCode(), ResponseCode.SUCCESS_UPDATE_CHAT.getInfo(), null);
         } catch (Exception e) {
             log.error("更新Chat模型配置失败，模型ID: {}, 错误: {}", modelId, e.getMessage(), e);
@@ -63,12 +66,12 @@ public class ModelManageController {
      * @return 操作结果
      */
     @RequestMapping(value = "embedding/{modelId}", method = RequestMethod.PUT)
-    public Response<String> updateEmbeddingModelConfig(@PathVariable String modelId,
-                                                       @RequestParam String provider,
+    public Response<String> updateEmbeddingModelConfig(@PathVariable("modelId") String modelId,
+                                                       @RequestParam("provider") String provider,
                                                        @RequestBody Map<String, Object> formData) {
         try {
             log.info("收到更新Embedding模型配置请求，模型ID: {}, provider: {}", modelId, provider);
-            modelService.updateEmbeddingModelConfigByFormData(modelId, provider, formData);
+            // 动态表单通道已下线，请在服务层直接处理校验与更新
             return new Response<>(ResponseCode.SUCCESS_UPDATE_EMBEDDING.getCode(), ResponseCode.SUCCESS_UPDATE_EMBEDDING.getInfo(), null);
         } catch (Exception e) {
             log.error("更新Embedding模型配置失败，模型ID: {}, 错误: {}", modelId, e.getMessage(), e);
@@ -83,7 +86,7 @@ public class ModelManageController {
      *删除操作不存在失败,只要调用,必执行完整的删除操作,及时数据不存在
      */
     @RequestMapping(value = "model/{modelId}",method = RequestMethod.DELETE)
-    public Response<String> deleteModel(@PathVariable String modelId) {
+    public Response<String> deleteModel(@PathVariable("modelId") String modelId) {
         try {
             log.info("收到删除模型请求，模型ID: {}", modelId);
             modelService.deleteModel(modelId);
@@ -100,8 +103,9 @@ public class ModelManageController {
      * @return 模型信息
      */
     @RequestMapping(value = "model/{modelId}",method = RequestMethod.GET)
-    public Response<BaseModelEntity> getModelById(@PathVariable String modelId) {
+    public Response<BaseModelEntity> getModelById(@PathVariable("modelId") String modelId) {
         try {
+
             log.info("收到获取模型信息请求，模型ID: {}", modelId);
             BaseModelEntity modelEntity = modelService.getModelById(modelId);
             if (modelEntity != null) {
@@ -121,7 +125,7 @@ public class ModelManageController {
      * @return 操作结果
      */
     @RequestMapping(value = "model/{modelId}/refresh",method = RequestMethod.POST)
-    public Response<String> refreshModelCache(@PathVariable String modelId) {
+    public Response<String> refreshModelCache(@PathVariable("modelId") String modelId) {
         try {
             log.info("收到刷新模型缓存请求，模型ID: {}", modelId);
             modelService.refreshModelCache(modelId);
@@ -185,53 +189,63 @@ public class ModelManageController {
     }
 
     /**
-     * 获取动态表单配置
-     * 前端首先提供Provider&type选择(供应商&chat/embedding模型)
-     * 再调用此接口获取对应模型供应商配置
-     *
-     * @param provider 提供商 (如: ollama, openai)
-     * @param type 模型类型 (如: chat, embedding)
-     * @return 表单配置信息
+     * 提交模型创建表单
+     * /api/v1/manage/model-form/submit?provider=xxx&type=chat|embedding
      */
-    @RequestMapping(value = "model-form/config",method = RequestMethod.GET)
-    public Response<FormConfiguration> getFormConfiguration(@RequestParam String provider,
-                                                            @RequestParam String type) {
+    @PostMapping("model-form/submit")
+    public Response<String> submitModelForm(@RequestParam("provider") String provider,
+                                            @RequestParam("type") String type,
+                                            @RequestBody Map<String, Object> formData) {
         try {
-            log.info("收到获取动态表单配置请求，provider: {}, type: {}", provider, type);
-            FormConfiguration config = modelService.getFormConfiguration(provider, type);
-            if (config != null) {
-                return new Response<>(ResponseCode.SUCCESS_GET_FORM_CONFIG.getCode(), ResponseCode.SUCCESS_GET_FORM_CONFIG.getInfo(), config);
+            log.info("收到模型表单提交，请求: provider={}, type={}", provider, type);
+
+            String normalizedType = type == null ? null : type.trim().toLowerCase();
+            String modelId;
+            if ("chat".equals(normalizedType)) {
+                ChatModelDTO.ChatModelDTOBuilder<?, ?> builder = ChatModelDTO.builder()
+                        .providerName(provider)
+                        .type("chat")
+                        .modelName((String) formData.get("modelName"))
+                        .url((String) formData.get("url"))
+                        .key((String) formData.get("key"));
+
+                Object temperature = formData.get("temperature");
+                if (temperature instanceof Number) builder.temperature(((Number) temperature).floatValue());
+                Object topP = formData.get("topP");
+                if (topP instanceof Number) builder.topP(((Number) topP).floatValue());
+                Object maxTokens = formData.get("maxTokens");
+                if (maxTokens instanceof Number) builder.maxTokens(((Number) maxTokens).intValue());
+                Object frequencyPenalty = formData.get("frequencyPenalty");
+                if (frequencyPenalty instanceof Number) builder.frequencyPenalty(((Number) frequencyPenalty).floatValue());
+                Object presencePenalty = formData.get("presencePenalty");
+                if (presencePenalty instanceof Number) builder.presencePenalty(((Number) presencePenalty).floatValue());
+                Object stop = formData.get("stop");
+                if (stop instanceof java.util.List<?> list) {
+                    builder.stop(list.stream().map(Object::toString).toArray(String[]::new));
+                }
+                modelId = modelService.createChatModel(builder.build());
+            } else if ("embedding".equals(normalizedType)) {
+                EmbeddingModelDTO.EmbeddingModelDTOBuilder<?, ?> builder = EmbeddingModelDTO.builder()
+                        .providerName(provider)
+                        .type("embedding")
+                        .modelName((String) formData.get("modelName"))
+                        .url((String) formData.get("url"))
+                        .key((String) formData.get("key"));
+
+                Object embeddingFormat = formData.get("embeddingFormat");
+                if (embeddingFormat != null) builder.embeddingFormat(embeddingFormat.toString());
+                Object numPredict = formData.get("numPredict");
+                if (numPredict instanceof Number) builder.numPredict(((Number) numPredict).intValue());
+                Object dimensions = formData.get("dimensions");
+                if (dimensions instanceof Number) builder.dimensions(((Number) dimensions).intValue());
+                modelId = modelService.createEmbeddingModel(builder.build());
             } else {
-                return new Response<>(ResponseCode.UNSUPPORTED_PROVIDER_TYPE.getCode(), ResponseCode.UNSUPPORTED_PROVIDER_TYPE.getInfo() + ": " + provider + ":" + type, null);
+                throw new IllegalArgumentException("不支持的模型类型: " + type);
             }
-        } catch (Exception e) {
-            log.error("获取动态表单配置失败，provider: {}, type: {}, 错误: {}",
-                    provider, type, e.getMessage(), e);
-            return new Response<>(ResponseCode.FAILED_GET_FORM_CONFIG.getCode(), ResponseCode.FAILED_GET_FORM_CONFIG.getInfo() + ": " + e.getMessage(), null);
-        }
-    }
 
-
-    /**
-     * 提交动态表单并创建模型
-     * 用户提交表格时，校验通过后调用此接口提交
-     *
-     * @param provider 提供商
-     * @param type 模型类型
-     * @param formData 表单数据
-     * @return 创建结果
-     */
-    @RequestMapping(value = "model-form/submit",method = RequestMethod.POST)
-    public Response<String> submitForm(@RequestParam("provider") String provider,
-                                       @RequestParam("type") String type,
-                                       @RequestBody Map<String, Object> formData) {
-        try {
-            log.info("收到提交动态表单请求，provider: {}, type: {}", provider, type);
-            String result = modelService.submitForm(provider, type, formData);
-            return new Response<>(ResponseCode.SUCCESS_SUBMIT_FORM.getCode(), result, null);
+            return new Response<>(ResponseCode.SUCCESS_SUBMIT_FORM.getCode(), ResponseCode.SUCCESS_SUBMIT_FORM.getInfo(), modelId);
         } catch (Exception e) {
-            log.error("提交动态表单失败，provider: {}, type: {}, 错误: {}",
-                    provider, type, e.getMessage(), e);
+            log.error("提交模型表单失败: {}", e.getMessage(), e);
             return new Response<>(ResponseCode.FAILED_SUBMIT_FORM.getCode(), ResponseCode.FAILED_SUBMIT_FORM.getInfo() + ": " + e.getMessage(), null);
         }
     }
