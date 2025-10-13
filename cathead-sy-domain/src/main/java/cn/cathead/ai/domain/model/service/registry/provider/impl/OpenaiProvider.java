@@ -58,7 +58,9 @@ public class OpenaiProvider implements IModelProvider {
                         : chatModelEntity.getFrequencyPenalty())
                 .presencePenalty(chatModelEntity.getPresencePenalty() == null
                         ? Double.parseDouble(ModelPropertyVo.PRESENCE_PENALTY.getDefaultValue())
-                        : chatModelEntity.getPresencePenalty());
+                        : chatModelEntity.getPresencePenalty())
+                .toolChoice("auto")  // 设置工具选择模式为自动
+                .parallelToolCalls(true);  // 启用并行工具调用
 
         // 处理动态属性
         if (chatModelEntity.getDynamicProperties() != null && !chatModelEntity.getDynamicProperties().isEmpty()) {

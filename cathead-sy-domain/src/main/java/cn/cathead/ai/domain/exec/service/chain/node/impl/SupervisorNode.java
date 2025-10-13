@@ -1,16 +1,20 @@
 package cn.cathead.ai.domain.exec.service.chain.node.impl;
 
-import cn.cathead.ai.domain.exec.model.entity.ExecutionRecord;
+import cn.cathead.ai.domain.client.service.advisor.memory.manager.IMemoryManager;
 import cn.cathead.ai.domain.exec.model.entity.ChainContext;
 import cn.cathead.ai.domain.exec.service.chain.loop.LoopChain;
 import cn.cathead.ai.domain.exec.model.entity.LoopContext;
 import cn.cathead.ai.domain.exec.service.chain.node.LoopNode;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.stereotype.Component;
 
 import static cn.cathead.ai.domain.exec.service.chain.tools.SseUtils.sendSection;
 
 @Slf4j
+@RequiredArgsConstructor
+@Component
 public class SupervisorNode implements LoopNode {
 
     public static final String NAME = "Supervisor";
@@ -19,6 +23,8 @@ public class SupervisorNode implements LoopNode {
     public String getName() {
         return NAME;
     }
+
+    private final IMemoryManager memoryManager;
 
     @Override
     public void handle(LoopContext ctx, ChainContext chainContext, LoopChain chain) {
@@ -40,7 +46,9 @@ public class SupervisorNode implements LoopNode {
                 .call()
                 .content();
 
-        ctx.setSupervisionResult(content);
+        // 将评审结果写入短期记忆
+        String sessionId = String.valueOf(chainContext.getParams().get("sessionId"));
+        memoryManager.saveShortTermTextAsAssistant(sessionId, content);
         sendSection(ctx, NAME, "REVIEW", content);
 
         String upper = content == null ? "" : content.toUpperCase();
@@ -52,27 +60,13 @@ public class SupervisorNode implements LoopNode {
 
         ctx.setStep(ctx.getStep() + 1);
 
-        ensureHistory(ctx);
         chain.jumpTo(ctx.isCompleted() || ctx.getStep() > ctx.getMaxStep() ? SummaryNode.NAME : AnalyzerNode.NAME, ctx, chainContext);
     }
 
     private String buildPrompt(LoopContext ctx) {
         StringBuilder sb = new StringBuilder();
-        sb.append("[Execution]\n").append(ctx.getExecutionResult()).append('\n');
-        sb.append("请对结果进行评分与是否通过(PASS/FAIL/OPTIMIZE)，并给出改进建议。");
+        sb.append("请评审上一步执行结果（见记忆中的最新助手消息），给出评分与是否通过(PASS/FAIL/OPTIMIZE)，并给出改进建议。");
         return sb.toString();
-    }
-
-    private void ensureHistory(LoopContext ctx) {
-        if (ctx.getExecutionHistory().isEmpty() || ctx.getExecutionHistory().get(ctx.getExecutionHistory().size() - 1).getStep() != ctx.getStep() - 1) {
-            ctx.getExecutionHistory().add(ExecutionRecord.builder()
-                    .step(ctx.getStep() - 1)
-                    .supervisionResult(ctx.getSupervisionResult())
-                    .build());
-        } else {
-            ctx.getExecutionHistory().get(ctx.getExecutionHistory().size() - 1)
-                    .setSupervisionResult(ctx.getSupervisionResult());
-        }
     }
 }
 

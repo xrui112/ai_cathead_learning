@@ -20,13 +20,19 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class DefaultExecFactory implements ExecFactory {
 
+    // 节点 Bean 由 Spring 管理
+    private final AnalyzerNode analyzerNode;
+    private final ExecutorNode executorNode;
+    private final SupervisorNode supervisorNode;
+    private final SummaryNode summaryNode;
+
     @Override
     public LoopChain createLoopChain() {
         List<LoopNode> nodes = List.of(
-                new AnalyzerNode(),
-                new ExecutorNode(),
-                new SupervisorNode(),
-                new SummaryNode()
+                analyzerNode,
+                executorNode,
+                supervisorNode,
+                summaryNode
         );
         return new DefaultLoopChain(nodes);
     }

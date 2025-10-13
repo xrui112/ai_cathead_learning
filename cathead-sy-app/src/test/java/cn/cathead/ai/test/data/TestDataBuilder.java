@@ -93,10 +93,10 @@ public class TestDataBuilder {
     public static Map<String, Object> defaultFormData() {
         Map<String, Object> formData = new HashMap<>();
         //nomic-embed-text
-        formData.put("modelName", "nomic-embed-text");
+        formData.put("modelName", "qwen-plus");
 //        formData.put("temperature", 0.7);
-        formData.put("url", "http://localhost:11434");
-        formData.put("key","");
+        formData.put("url", "https://dashscope.aliyuncs.com/compatible-mode");
+        formData.put("key","sk-c39abd1f69684b8db0046d82daf0676a");
 //        formData.put("dimensions",1024);
 //        formData.put("topP", 0.9);
 //        formData.put("maxTokens", 4096);

@@ -16,6 +16,11 @@
         <dependencies>
             <dependency>
                 <groupId>cn.cathead</groupId>
+                <artifactId>cathead-sy-domain</artifactId>
+                <version>1.0-SNAPSHOT</version>
+            </dependency>
+            <dependency>
+                <groupId>cn.cathead</groupId>
                 <artifactId>cathead-sy-trigger</artifactId>
                 <version>1.0-SNAPSHOT</version>
             </dependency>
@@ -89,6 +94,14 @@
                 <artifactId>spring-boot-starter</artifactId>
             </dependency>
 
+
+            <!-- 如需作为 MCP 客户端去调用外部 MCP 工具（例如 text_to_sql 在外部） -->
+            <dependency>
+                <groupId>org.springframework.ai</groupId>
+                <artifactId>spring-ai-starter-mcp-client</artifactId>
+                <version>${spring-ai.version}</version>
+            </dependency>
+
             <dependency>
                 <groupId>com.fasterxml.jackson.datatype</groupId>
                 <artifactId>jackson-datatype-jsr310</artifactId>
@@ -101,6 +114,14 @@
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-databind</artifactId>
                 <version>2.15.0</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.ai</groupId>
+                <artifactId>spring-ai-commons</artifactId>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.ai</groupId>
+                <artifactId>spring-ai-model</artifactId>
             </dependency>
         </dependencies>
 

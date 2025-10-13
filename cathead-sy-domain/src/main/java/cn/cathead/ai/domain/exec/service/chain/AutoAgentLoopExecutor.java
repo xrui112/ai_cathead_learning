@@ -1,5 +1,6 @@
 package cn.cathead.ai.domain.exec.service.chain;
 
+import cn.cathead.ai.domain.client.service.advisor.memory.manager.IMemoryManager;
 import cn.cathead.ai.domain.client.service.build.IClientBuilderService;
 import cn.cathead.ai.domain.exec.model.entity.AutoAgentExecuteResultEntity;
 import cn.cathead.ai.domain.exec.model.entity.ExecuteCommandEntity;
@@ -24,9 +25,10 @@ public class AutoAgentLoopExecutor {
 
     private final IClientBuilderService clientBuilderService;
     private final ExecFactory execFactory;
+    private final IMemoryManager memoryManager;
 
     public void execute(ExecuteCommandEntity cmd, ResponseBodyEmitter emitter) {
-        ChatClient chatClient = clientBuilderService.build(cmd.getModelId());
+        ChatClient chatClient = clientBuilderService.build(cmd.getModelId(), cmd.getAgentId());
 
         LoopContext ctx = new LoopContext();
         ctx.setStep(1);
@@ -42,9 +44,12 @@ public class AutoAgentLoopExecutor {
 
         ChainContext chainCtx = execFactory.createChainContext(chatClient, params);
         LoopChain chain = execFactory.createLoopChain();
-
         try {
             MemoryContextHolder.set(cmd.getSessionId(), cmd.getAgentId(), cmd.getKnowledgeId());
+            // 将用户任务写入短期记忆，作为会话起点
+            if (cmd.getTask() != null && !cmd.getTask().isBlank()) {
+                memoryManager.saveShortTermTextAsUser(cmd.getSessionId(), cmd.getTask());
+            }
             chain.jumpTo("Analyzer", ctx, chainCtx);
         } finally {
             MemoryContextHolder.clear();

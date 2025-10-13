@@ -19,15 +19,6 @@ public class LoopContext {
     private String currentTask;
     private boolean completed;
 
-    private String analysisResult;
-    private String executionResult;
-    private String supervisionResult;
-    private String finalSummary;
-
-    private List<ExecutionRecord> executionHistory = new ArrayList<>();
-
-    private Map<String, Object> temp = new HashMap<>();
-
     private ResponseBodyEmitter emitter;
 }
 

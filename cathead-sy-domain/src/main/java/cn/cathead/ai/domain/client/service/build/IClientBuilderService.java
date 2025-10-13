@@ -14,6 +14,14 @@ public interface IClientBuilderService {
      * @return 已组装的 ChatClient
      */
     ChatClient build(String modelId);
+
+    /**
+     * 根据模型ID与 AgentId 构建 ChatClient，并可按 Agent 注入工具/Advisors。
+     * 默认回退到仅按模型构建。
+     */
+    default ChatClient build(String modelId, String agentId) {
+        return build(modelId);
+    }
 }
 
 

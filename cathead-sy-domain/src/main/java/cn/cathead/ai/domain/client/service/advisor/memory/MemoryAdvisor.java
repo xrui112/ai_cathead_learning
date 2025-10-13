@@ -13,12 +13,14 @@ import org.springframework.ai.chat.client.advisor.api.AdvisorChain;
 import org.springframework.ai.chat.client.advisor.api.BaseAdvisor;
 import org.springframework.core.Ordered;
 import org.springframework.ai.chat.messages.AssistantMessage;
+import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Method;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -51,9 +53,12 @@ public class MemoryAdvisor implements BaseAdvisor {
         if (knowledgeId == null) knowledgeId = MemoryContextHolder.getKnowledgeId();
         if (agentId == null) agentId = MemoryContextHolder.getAgentId();
 
-        List<UserMessage> originalPromptMessages = chatClientRequest.prompt().getUserMessages();
+        // 原始全量消息（包含 system/assistant/user），用于保持 MCP/工具链所需的系统指令
+        List<Message> originalAllMessages = chatClientRequest.prompt().getInstructions();
+        // 仅用于提取用户查询文本
+        List<UserMessage> originalUserMessages = chatClientRequest.prompt().getUserMessages();
 
-        String queryText = extractLastUserText(originalPromptMessages);
+        String queryText = extractLastUserText(originalUserMessages);
 
         boolean useStm = getBoolean(context.get(ATTR_USE_STM), true);
         boolean useLtm = getBoolean(context.get(ATTR_USE_LTM), true);
@@ -80,19 +85,65 @@ public class MemoryAdvisor implements BaseAdvisor {
                         .append(c.getSummary())
                         .append('\n');
             }
-            longTerm.add(new AssistantMessage(ltmContext.toString()));
+            // 重要：用 SystemMessage 注入检索上下文，避免在最后一个 UserMessage 之前插入 Assistant 角色导致工具调用判定异常
+            longTerm.add(new SystemMessage(ltmContext.toString()));
         }
 
-        // 合并：LT + ST + 原始 prompt 消息
-        List<Message> merged = new ArrayList<>(longTerm.size() + shortTerm.size() + originalPromptMessages.size());
-        merged.addAll(longTerm);
-        merged.addAll(shortTerm);
-        merged.addAll(originalPromptMessages);
+        // 合并：将 LT/ST 插入到“最后一个用户消息”之前，确保系统/工具注入消息仍在最前
+        List<Message> merged = new ArrayList<>(longTerm.size() + shortTerm.size() + originalAllMessages.size());
+        int lastUserIdx = -1;
+        for (int i = 0; i < originalAllMessages.size(); i++) {
+            if (originalAllMessages.get(i) instanceof UserMessage) {
+                lastUserIdx = i;
+            }
+        }
+        if (lastUserIdx >= 0) {
+            // 1) 保持原有顺序直至最后一个 UserMessage 之前
+            if (lastUserIdx > 0) {
+                merged.addAll(originalAllMessages.subList(0, lastUserIdx));
+            }
+            // 2) 插入 LT/ST 上下文
+            merged.addAll(longTerm);
+            merged.addAll(shortTerm);
+            // 3) 最后一个 UserMessage
+            merged.add(originalAllMessages.get(lastUserIdx));
+            // 4) 其后的消息（通常无，但为稳妥保留）
+            if (lastUserIdx + 1 < originalAllMessages.size()) {
+                merged.addAll(originalAllMessages.subList(lastUserIdx + 1, originalAllMessages.size()));
+            }
+        } else {
+            // 没有用户消息，退化为：LT/ST + 原消息
+            merged.addAll(longTerm);
+            merged.addAll(shortTerm);
+            merged.addAll(originalAllMessages);
+        }
 
-        // 构造新的 Prompt
+        // 优先：尝试原位修改 Prompt 的指令列表，避免替换 ChatClientRequest
+        try {
+            Prompt origPrompt = chatClientRequest.prompt();
+            Field instrField = findField(origPrompt.getClass(), "instructions");
+            if (instrField == null) instrField = findField(origPrompt.getClass(), "messages");
+            if (instrField != null) {
+                instrField.setAccessible(true);
+                instrField.set(origPrompt, merged);
+                return chatClientRequest;
+            }
+        } catch (Throwable ignore) { }
+
+        // 构造新的 Prompt（仅当原位修改失败时）
         Prompt newPrompt = Prompt.builder().messages(merged).build();
 
-        // 用 builder 模式返回新请求，context 透传
+        // 次优先：通过反射直接替换原请求的 prompt，避免丢失工具配置
+        try {
+            Field promptField = findField(chatClientRequest.getClass(), "prompt");
+            if (promptField != null) {
+                promptField.setAccessible(true);
+                promptField.set(chatClientRequest, newPrompt);
+                return chatClientRequest;
+            }
+        } catch (Throwable ignore) { }
+
+        // 回退：新建请求（可能丢失工具配置，仅作为兜底）
         return ChatClientRequest.builder()
                 .prompt(newPrompt)
                 .context(context)
@@ -198,6 +249,17 @@ public class MemoryAdvisor implements BaseAdvisor {
             // 3) 在所有接口及其父接口中找声明方法
             Method m = findInInterfaces(targetClass, name);
             if (m != null) return m;
+        }
+        return null;
+    }
+
+    private static Field findField(Class<?> targetClass, String name) {
+        for (Class<?> c = targetClass; c != null; c = c.getSuperclass()) {
+            try {
+                Field f = c.getDeclaredField(name);
+                f.setAccessible(true);
+                return f;
+            } catch (NoSuchFieldException ignored) { }
         }
         return null;
     }

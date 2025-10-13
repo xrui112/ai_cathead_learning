@@ -26,7 +26,7 @@ public class EmbeddingService implements IEmbeddingService {
 
     @Override
     public EmbeddingResponse embedText(EmbeddingRequestDTO embeddingRequestDto) {
-        log.info("调用Embedding接口，模型ID: {}", embeddingRequestDto.getModelId());
+//        log.info("调用Embedding接口，模型ID: {}", embeddingRequestDto.getModelId());
         EmbeddingModel embeddingModel = modelProviderService.getAndValidateEmbeddingModel(embeddingRequestDto.getModelId());
         return generateEmbedding(embeddingModel, embeddingRequestDto);
     }
@@ -34,7 +34,7 @@ public class EmbeddingService implements IEmbeddingService {
     @Override
     public EmbeddingResponse generateEmbedding(EmbeddingModel embeddingModel, EmbeddingRequestDTO request) {
         try {
-            log.info("调用文本向量化处理");
+//            log.info("调用文本向量化处理");
             List<String> textsToEmbed = buildTextsList(request);
 
             if (textsToEmbed.isEmpty()) {

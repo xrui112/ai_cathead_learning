@@ -1,16 +1,20 @@
 package cn.cathead.ai.domain.exec.service.chain.node.impl;
 
-import cn.cathead.ai.domain.exec.model.entity.ExecutionRecord;
+import cn.cathead.ai.domain.client.service.advisor.memory.manager.IMemoryManager;
 import cn.cathead.ai.domain.exec.model.entity.ChainContext;
 import cn.cathead.ai.domain.exec.service.chain.loop.LoopChain;
 import cn.cathead.ai.domain.exec.model.entity.LoopContext;
 import cn.cathead.ai.domain.exec.service.chain.node.LoopNode;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.stereotype.Component;
 
 import static cn.cathead.ai.domain.exec.service.chain.tools.SseUtils.sendSection;
 
 @Slf4j
+@RequiredArgsConstructor
+@Component
 public class SummaryNode implements LoopNode {
 
     public static final String NAME = "Summary";
@@ -19,6 +23,8 @@ public class SummaryNode implements LoopNode {
     public String getName() {
         return NAME;
     }
+
+    private final IMemoryManager memoryManager;
 
     @Override
     public void handle(LoopContext ctx, ChainContext chainContext, LoopChain chain) {
@@ -35,32 +41,18 @@ public class SummaryNode implements LoopNode {
                 .call()
                 .content();
 
-        ctx.setFinalSummary(content);
+        // 写入最终总结到短期记忆
+        String sessionId = String.valueOf(chainContext.getParams().get("sessionId"));
+        memoryManager.saveShortTermTextAsAssistant(sessionId, content);
         sendSection(ctx, NAME, "SUMMARY", content);
         sendSection(ctx, NAME, "DONE", ctx.isCompleted() ? "COMPLETED" : "MAX_STEP_REACHED");
-
-        ensureHistory(ctx);
         chain.end(ctx, chainContext);
     }
 
     private String buildPrompt(LoopContext ctx) {
         StringBuilder sb = new StringBuilder();
-        sb.append("请根据以下执行历史生成最终报告：\n");
-        for (ExecutionRecord r : ctx.getExecutionHistory()) {
-            sb.append("Step ").append(r.getStep()).append(':').append('\n');
-            if (r.getAnalysisResult() != null) sb.append("- Analysis: ").append(r.getAnalysisResult()).append('\n');
-            if (r.getExecutionResult() != null) sb.append("- Execution: ").append(r.getExecutionResult()).append('\n');
-            if (r.getSupervisionResult() != null) sb.append("- Supervision: ").append(r.getSupervisionResult()).append('\n');
-        }
+        sb.append("请基于整个会话的记忆（用户任务与各阶段输出）生成最终报告，并简要列出关键结论与后续建议。");
         return sb.toString();
-    }
-
-    private void ensureHistory(LoopContext ctx) {
-        if (ctx.getExecutionHistory().isEmpty()) return;
-        ExecutionRecord last = ctx.getExecutionHistory().get(ctx.getExecutionHistory().size() - 1);
-        if (last.getStep() != ctx.getStep()) {
-            ctx.getExecutionHistory().add(ExecutionRecord.builder().step(ctx.getStep()).build());
-        }
     }
 }
 

@@ -8,6 +8,9 @@ import cn.cathead.ai.types.dto.ChatRequestDTO;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.model.ChatModel;
+import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
@@ -78,7 +81,7 @@ class AutoAgentLoopExecutorIT {
     @Test
     @DisplayName("执行一轮链路并断言结束事件")
     void testExecuteOnce() throws Exception {
-        String modelId = "7c5d376d-3bf6-41dd-a5dc-a7390ae09a18";
+        String modelId = "741f040a-330c-42c4-a7bc-dbdd36010f8a";
 
         ExecuteCommandEntity cmd = ExecuteCommandEntity.builder()
                 .modelId(modelId)
@@ -86,7 +89,7 @@ class AutoAgentLoopExecutorIT {
                 .agentId("test-agent")
                 .knowledgeId("test-knowledge")
                 .maxStep(1)
-                .task("显示销售数据并计算平均金额")
+                .task("在 mysqlDataSource 的 MOCK_DATA 表中统计性别为 Male 和 Female 的人数，并且输出各自的人数")
                 .build();
 
         TestEmitter emitter = new TestEmitter();
@@ -102,4 +105,23 @@ class AutoAgentLoopExecutorIT {
         boolean hasFinish = events.stream().anyMatch(s -> s.contains("\"stage\":\"System\"") && s.contains("\"content\":\"FINISH\""));
         Assertions.assertTrue(hasFinish, "未收到结束事件FINISH: " + events);
     }
+
+//    @Test
+//    @DisplayName("执行一轮链路并断言结束事件")
+//    void testTool() throws Exception {
+//        String modelId = "741f040a-330c-42c4-a7bc-dbdd36010f8a";
+//        ChatModel chatModel=modelService.getLatestChatModel(modelId);
+//        ChatClient chatClient=ChatClient.builder()
+//                .defaultTools()
+//                .build();
+//
+//
+//    }
+//
+//    @Tool
+//    public void printsss(){
+//        System.out.println("sss");
+//    }
+
+
 }

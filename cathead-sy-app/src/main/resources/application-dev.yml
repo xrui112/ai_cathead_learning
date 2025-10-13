@@ -42,6 +42,12 @@ spring:
         transcription: none
       moderation: none
 
+    mcp:
+    server:
+    # 启用 stdio 传输（允许通过 STDIO 连接 MCP 客户端）
+    stdio: true
+
+
 mybatis:
   mapper-locations: classpath*:mybatis/mapper/*.xml
 

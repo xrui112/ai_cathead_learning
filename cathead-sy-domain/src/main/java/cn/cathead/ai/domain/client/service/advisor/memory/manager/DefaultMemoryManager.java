@@ -3,17 +3,18 @@ package cn.cathead.ai.domain.client.service.advisor.memory.manager;
 import cn.cathead.ai.domain.client.model.entity.MemoryChunk;
 import cn.cathead.ai.domain.client.model.entity.MemoryMessage;
 import cn.cathead.ai.domain.client.model.valobj.NamespaceKey;
+import cn.cathead.ai.domain.client.service.advisor.memory.manager.config.MemoryProperties;
 import cn.cathead.ai.domain.client.service.advisor.memory.manager.instant.IShortTermMemoryService;
-import cn.cathead.ai.domain.client.service.advisor.memory.manager.longterm.LongTermMemoryService;
 import cn.cathead.ai.domain.client.service.advisor.memory.manager.instant.compress.IMemoryCompressor;
+import cn.cathead.ai.domain.client.service.advisor.memory.manager.longterm.LongTermMemoryService;
+import cn.cathead.ai.domain.client.service.advisor.memory.manager.tools.MemoryContextHolder;
 import cn.cathead.ai.domain.client.service.advisor.memory.manager.tools.MessageUtils;
 import cn.cathead.ai.domain.client.service.advisor.memory.manager.tools.ShortTermPolicy;
 import cn.cathead.ai.domain.client.service.advisor.memory.manager.tools.ShortTermPolicyProvider;
-import cn.cathead.ai.domain.client.service.advisor.memory.manager.tools.MemoryContextHolder;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.ai.chat.messages.Message;
-import cn.cathead.ai.domain.client.service.advisor.memory.manager.config.MemoryProperties;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
